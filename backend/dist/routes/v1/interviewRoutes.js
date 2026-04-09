@@ -1,0 +1,11 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const express_1 = require("express");
+const interviewController_1 = require("../../controllers/interviewController");
+const validateRequest_1 = require("../../middlewares/validateRequest");
+const interviewValidation_1 = require("../../validations/interviewValidation");
+const router = (0, express_1.Router)();
+router.post('/start', (0, validateRequest_1.validate)(interviewValidation_1.startInterviewSchema), interviewController_1.InterviewController.start);
+router.post('/respond', (0, validateRequest_1.validate)(interviewValidation_1.respondInterviewSchema), interviewController_1.InterviewController.respond);
+router.post('/evaluate', (0, validateRequest_1.validate)(interviewValidation_1.evaluateInterviewSchema), interviewController_1.InterviewController.evaluate);
+exports.default = router;
