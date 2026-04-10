@@ -1,81 +1,58 @@
-# AI Tutor Screener Backend
+# Lumina AI - The Logic Core 🧠
 
-A production-ready ("enterprise-grid"), robust Node.js backend using Express, TypeScript, Mongoose/Prisma + PostgreSQL, OpenAI Whisper, GPT-4, and WebSocket to conduct fully-dynamic AI screener interviews.
+Welcome to the central nervous system of **Lumina AI**. While the frontend delivers a million-dollar aesthetic, this backend delivers the sheer, uncompromising enterprise power required to run real-time conversational AI without breaking a sweat.
 
-## Features Included 🌟
-- **Voice Pipeline**: Converts m4a/mp3 speech to text using OpenAI Whisper API. Temporary file handling via `multer`.
-- **Intelligent AI Interview Engine**: Stateful dialogue. Handles silence/short answers securely with the AI naturally prompting.
-- **Evaluation Engine**: GPT-4 driven strict JSON evaluators for scoring on clarity, warmth, patience.
-- **Enterprise Best Practices**:
-  - `winston` structured logging
-  - `zod` for 100% startup validation and Route strict payload validation.
-  - Custom `AppError` and global error handling logic.
-  - Rate-limiting, CORS, Helmet integrations.
-  - Clean separation of Services, Controllers, and Routers.
-- **Real-Time Engine**: WebSocket via `Socket.IO` ready for streaming clients.
-- **Docker Compose**: Pre-packaged containerization logic for PostgreSQL and Node App.
+We didn't settle for a basic CRUD app; this backend streams and dictates bidirectional contextual audio through OpenAI, securely manages live Socket connections, and grades interviews intelligently using LLM-driven deterministic JSON.
 
-## Pre-requisites
-- [Node.js v20+](https://nodejs.org/en)
-- [Docker & Docker Compose](https://www.docker.com/) 
-- A valid **OpenAI API Key**.
+## 🏗️ Technical Structure
 
-## Quick Start (Local Setup)
+- **Robust Concurrency**: Run on Node.js / Express, we utilize massive asynchronous throughput handling REST endpoints and WebSocket events simultaneously.
+- **Audio Ingestion**: Custom integrations using `multer` allow for rapid temporary ingestion of `webm`/`m4a` audio blobs, which are heavily optimized before routing into OpenAI's Whisper systems.
+- **Prisma & PostgreSQL**: Flawless, type-safe database schemas map our Candidates and their session states, providing guaranteed runtime confidence.
+- **Enterprise Defenses**: Strict `Zod` payload validation checks, Helmet for header security, Winston for structured terminal logging, and CORS locking.
 
-1. **Clone & Install dependencies:**
+## 🗂️ Map of the Domain
+
+```text
+src/
+ ├── config/            # Core loaders (Env vars mapped dynamically)
+ ├── controllers/       # The command center for routes
+ │   ├── interviewController.ts # Orchestrates starting/concluding evaluation
+ │   └── voiceController.ts     # The beating heart: handles Whisper transcription
+ ├── routes/            # Express endpoint maps
+ ├── services/          # Pure logic functions (OpenAI mappings, DB transactions)
+ ├── sockets/           # Real-time WebSocket room managers
+ ├── utils/             # Standardization tools (Error handlers, Logging configs)
+ ├── validations/       # Immutable Zod input schemas
+ ├── app.ts             # Express App Configuration
+ └── server.ts          # Alpha Thread: Combines HTTP and Socket layers
+```
+
+## 🚀 Booting the Core
+
+To run this locally, you must provide your own external logic provider (OpenAI) and data vault (PostgreSQL).
+
+1. Install dependencies:
    ```bash
-   cd backend
    npm install
    ```
 
-2. **Environment Variables:**
-   Copy `.env.example` to `.env` and fill out your `OPENAI_API_KEY`.
-   ```bash
-   cp .env.example .env
+2. Establish Environment File (`.env`):
+   ```env
+   DATABASE_URL="postgresql://user:pass@your_db_host:5432/ai_interview"
+   OPENAI_API_KEY="sk-your-openai-api-key"
+   PORT=5000
    ```
 
-3. **Database Setup (Docker required):**
-   Use Docker compose to spin up the local Postgres Database:
+3. Synchronize your Prisma schemas:
    ```bash
-   docker-compose up -d db
+   npx prisma generate
+   npx prisma db push
    ```
 
-4. **Initialize DB Schema (Prisma):**
-   ```bash
-   npx prisma migrate dev --name init
-   ```
-
-5. **Start Dev Server:**
+4. Ignite the engines:
    ```bash
    npm run dev
    ```
 
-## API Documentation 
-
-### 1. `POST /api/v1/voice/input`
-- **Request Type**: `multipart/form-data`
-- **Payload**: `audio` (File)
-- **Response**: `{ success: true, data: { transcript: string } }`
-
-### 2. `POST /api/v1/interview/start`
-- **Request Body**: `{ "candidateName": "John" }`
-- **Response**: Starts session and returns initial question + sessionId.
-
-### 3. `POST /api/v1/interview/respond`
-- **Request Body**: `{ "sessionId": "UUID...", "text": "candidate reply..." }`
-- **Response**: Sends the AI response based on the conversation context.
-
-### 4. `POST /api/v1/interview/evaluate`
-- **Request Body**: `{ "sessionId": "UUID..." }`
-- **Response**: JSON Evaluation results (scores & recommendation).
-
-### 5. WebSocket Connection (`wss://your-backend-url.com`)
-Clients can connect to socket via `socket.io-client` with events:
-- `emit('start_interview', { candidateName: 'x' })`
-- `emit('respond', { sessionId: 'xyz', text: 'response' })` 
-
-## Production Build & Deploy
-Everything can be launched cleanly via docker-compose:
-```bash
-docker-compose up --build -d
-```
+The backend boots securely on your provided port. Keep it active to ensure the Frontend can properly establish its vital WebSocket connections.

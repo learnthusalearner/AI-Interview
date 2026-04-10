@@ -1,35 +1,40 @@
-# AI Tutor Screener - Frontend UI
+# Lumina AI - The Frontend Experience 🎨
 
-A highly polished, ultra-modern Next.js frontend capturing the aesthetic and usability of a premium 20+ year-designed SaaS application. Features extensive frame-motion wrappers, UIverse-inspired audio visualization, and flawless responsiveness.
+This directory houses the breathtaking visual layer of the **Lumina AI Platform**. Built with uncompromising attention to detail, this Next.js application captures the aesthetic of a premium, million-dollar SaaS product. 
 
-## Tech Stack
-- Next.js (App Router)
-- React 18+ & TypeScript
-- Tailwind CSS v4 
-- `shadcn/ui` components
-- `framer-motion` for micro-interactions
-- `zustand` for high-performance frontend state
-- Web Speech / MediaRecorder APIs for Mic Access
+What makes it unique is the complete departure from flat, lifeless enterprise design—instead, we use heavy glassmorphism, dynamic Aurora gradients, and fluid `framer-motion` physics to make every click feel expensive.
 
-## 🚀 Quick Start
-Make sure your backend is already deployed and running.
+## 🏗️ Technical Structure
 
-1. **Install dependencies**
-   ```bash
-   cd frontend
-   npm install
+- **Next.js (App Router)**: Lightning-fast, server-rendered React framework handling our routing and layout.
+- **Micro-Interactions (`framer-motion`)**: Elements never just appear; they float, they spring, and they glow dynamically based on user context.
+- **Zustand State**: Forget heavy Redux stores; we use hyper-optimized Zustand so that components only render precisely when they get new AI context.
+- **Shadcn UI & Tailwind v4**: A headless foundation mapped strictly to our bespoke `Outfit` font and deep-space color palette (Obsidian, Neon Cyan, and Violet).
+
+## 🗂️ Map of the Domain
+
+```text
+src/
+ ├── app/                 # The physical screens
+ │   ├── admin/           # Lumina Command Center (3D Analytics)
+ │   ├── dashboard/       # Applicant applicant tracking portal
+ │   ├── interview/       # The WebRTC live chat arena
+ │   └── page.tsx         # The cinematic landing screen
+ ├── components/ui/       # Extracted, highly customized Shadcn blocks
+ ├── hooks/               # Custom system abstractions (e.g., useAudioRecorder)
+ ├── lib/store.ts         # Global Zustand state bridging the gaps
+ └── services/api.ts      # Axios abstractions connecting to our Node API
+```
+
+## 🚀 Booting the Visuals
+
+1. Ensure your `.env` contains:
+   ```env
+   NEXT_PUBLIC_API_URL=https://your-production-backend-url.com
+   NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...
+   CLERK_SECRET_KEY=sk_test_...
    ```
+2. Install dependencies: `npm install`
+3. Ignite the engine: `npm run dev`
 
-2. **Run the Development Server**
-   ```bash
-   npm run dev
-   ```
-   *Your app will automatically launch on your deployed domain.*
-
-## Core Screens
-1. **Landing Page (`/`)**: A beautiful, glowing onboarding screen collecting candidate information to bridge the initial session securely.
-2. **Interview Board (`/interview`)**: The live testing ground. Includes a visually distinguished chat log with pulsing UI elements and an animated Web Speech recording mechanism reminiscent of premium AIs (like the ChatGPT Voice mode).
-3. **Evaluation Dashboard (`/evaluation`)**: A dashboard reading the raw AI JSON grading rubric and plotting it perfectly alongside ShadCN Progress bars, showcasing Clarity, Warmth, Patience, and Key Quotes.
-
-## Note on MediaRecorder
-The app inherently needs Microphone access. Ensure your browser grants permission when hitting "Start Interview".
+Your platform will launch securely to your configured domain. Be ready with microphone access so the Lumina Core can properly synchronize during testing!
