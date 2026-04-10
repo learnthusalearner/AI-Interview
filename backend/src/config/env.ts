@@ -9,6 +9,11 @@ const envSchema = z.object({
   DATABASE_URL: z.string().url('Invalid Database URL format'),
   OPENAI_API_KEY: z.string().min(1, 'OpenAI API Key is required'),
   CORS_ORIGIN: z.string().default('*'),
+  SMTP_HOST: z.string().optional(),
+  SMTP_PORT: z.string().default('587'),
+  SMTP_USER: z.string().optional(),
+  SMTP_PASS: z.string().optional(),
+  SMTP_FROM: z.string().default('"Cuemath" <careers@cuemath.com>'),
 });
 
 const _env = envSchema.safeParse(process.env);
