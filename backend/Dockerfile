@@ -15,6 +15,9 @@ RUN npx prisma generate
 # Copy the rest of the application code
 COPY . .
 
+# Provide a dummy DATABASE_URL so Prisma's config parser doesn't crash during build
+ENV DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy"
+
 # Run the build script (generates prisma client and compiles TS to JS)
 RUN npm run build
 
