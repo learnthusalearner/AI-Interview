@@ -208,11 +208,13 @@ export default function AdminPage() {
                       <td className="px-6 py-5 text-rose-400 font-medium capitalize">{analytics.weak}</td>
                       <td className="px-6 py-5 text-center">
                          <span className="bg-violet-500/10 border border-violet-500/20 text-violet-300 px-3 py-1 rounded-full font-mono shadow-[0_0_10px_rgba(139,92,246,0.1)]">
-                           {c.totalScore}/60
+                           {c.totalScore || 0}/60
                          </span>
                       </td>
                       <td className="px-6 py-5 text-center">
-                         {c.applicationStatus === 'PENDING' ? (
+                         {c.status === 'IN_PROGRESS' ? (
+                           <span className="text-zinc-500 bg-zinc-500/10 border border-zinc-500/20 px-2 py-1 rounded text-[10px] font-bold uppercase tracking-[0.2em] shadow-[0_0_10px_rgba(113,113,122,0.1)]">INCOMPLETE</span>
+                         ) : c.applicationStatus === 'PENDING' ? (
                            <span className="text-yellow-400 bg-yellow-400/10 border border-yellow-400/20 px-2 py-1 rounded text-xs font-semibold uppercase tracking-wider">PENDING</span>
                          ) : c.applicationStatus === 'ACCEPTED' ? (
                            <span className="text-cyan-400 bg-cyan-400/10 border border-cyan-400/20 px-2 py-1 rounded text-xs font-semibold uppercase tracking-wider">SELECTED</span>

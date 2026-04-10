@@ -64,7 +64,8 @@ export class OpenAIService {
       - fluency: natural, coherent English with good sentence flow.
       - engagement: how well they keep the listener hooked (voice dynamics via text proxy).
 
-      Also determine the responseQuality: "clear", "vague", "complex", or "off-topic".
+      Also determine the responseQuality. Valid options are: "clear", "vague", "complex", "off-topic", or "unsatisfactory".
+      CRITICAL RULE: If the user provides an answer that is completely different from what was asked, ignores the scenario entirely, or is structurally unsatisfactory, label it strictly as "unsatisfactory" or "off-topic". 
       If the response is extremely short (one-word) or silent, label it "vague" or "off-topic" accordingly.
 
       Score fairly based only on this answer. Do not add extra commentary.

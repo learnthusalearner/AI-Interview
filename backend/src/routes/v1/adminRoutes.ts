@@ -8,15 +8,16 @@ const router = Router();
 router.get('/candidates', async (req, res, next) => {
   try {
     const sessions = await prisma.interviewSession.findMany({
-      where: { status: 'COMPLETED' },
-      orderBy: { totalScore: 'desc' },
+      orderBy: { createdAt: 'desc' },
       select: {
         id: true,
         candidateName: true,
         candidateEmail: true,
+        status: true,
         applicationStatus: true,
         overallRecommendation: true,
         totalScore: true,
+        cheatCount: true,
         evaluationData: true,
         feedback: true,
         createdAt: true,

@@ -14,6 +14,13 @@ Your primary goal is to assess the soft skills required for tutoring. This isn't
 5. English fluency – natural, easy-to-follow English flow
 
 --------------------------------------------------
+📋 INTERVIEW STRUCTURE
+--------------------------------------------------
+- You MUST conduct exactly 10 conversational turns.
+- Distribute your engagement systematically: Ask 6 to 7 "hardcore" foundational teaching scenario questions, and 3 to 4 deep follow-up questions challenging their previous answers.
+- The system will inject context detailing which turn you are on. Guide the pacing accordingly.
+
+--------------------------------------------------
 🎭 TEACHING SIMULATION MODE
 --------------------------------------------------
 - You are not just an interviewer; you must act like a confused 8-year-old student interacting with a tutor.
@@ -132,30 +139,40 @@ export class InterviewService {
     const aiContext = session.messages.map(m => ({ role: m.role, content: m.content }));
     aiContext.push({ role: 'user', content: userText });
 
-    // Dynamic Edge Case Injection based on response quality
-    if (evalData.responseQuality === "vague") {
-      aiContext.push({
-        role: 'system',
-        content: 'SYSTEM INSTRUCTION: The candidate\'s last response was vague. Push them to be much more specific.'
-      });
-    } else if (evalData.responseQuality === "complex") {
-      aiContext.push({
-        role: 'system',
-        content: 'SYSTEM INSTRUCTION: The candidate is using language that is too complex. Act confused and ask them to simplify.'
-      });
-    } else if (evalData.responseQuality === "off-topic") {
-      aiContext.push({
-        role: 'system',
-        content: 'SYSTEM INSTRUCTION: The candidate is going off-topic. Politely steer them back to a real teaching scenario.'
-      });
-    }
+    let shouldCutoff = userMessageCount >= 10;
 
-    // Adaptive System Cutoff Instruction
-    if (userMessageCount >= 10) {
-       aiContext.push({ 
-           role: 'system', 
-           content: 'SYSTEM INSTRUCTION: MAX QUESTIONS REACHED. End the interview gracefully.'
-       });
+    // Early termination for unsatisfactory/off-topic response
+    if (evalData.responseQuality === "off-topic" || evalData.responseQuality === "unsatisfactory" || evalData.average < 3) {
+      shouldCutoff = true;
+      aiContext.push({
+        role: 'system',
+        content: 'SYSTEM INSTRUCTION: The candidate\\'s last answer was completely unsatisfactory or off-topic. Inform them politely but firmly that the interview is being terminated early due to this, and end the conversation immediately in one sentence.'
+      });
+    } else {
+      // Normal pacing and edge-case injection
+      aiContext.push({
+        role: 'system',
+        content: `SYSTEM INSTRUCTION: This is turn ${userMessageCount}/10. Keep the distribution in mind (6-7 new scenarios, 3-4 follow ups).`
+      });
+
+      if (evalData.responseQuality === "vague") {
+        aiContext.push({
+          role: 'system',
+          content: 'SYSTEM INSTRUCTION: The candidate\\'s last response was vague. Push them to be much more specific.'
+        });
+      } else if (evalData.responseQuality === "complex") {
+        aiContext.push({
+          role: 'system',
+          content: 'SYSTEM INSTRUCTION: The candidate is using language that is too complex. Act confused and ask them to simplify.'
+        });
+      }
+
+      if (userMessageCount >= 10) {
+         aiContext.push({ 
+             role: 'system', 
+             content: 'SYSTEM INSTRUCTION: MAX QUESTIONS REACHED. End the interview gracefully.'
+         });
+      }
     }
 
     const aiReply = await OpenAIService.getChatCompletion(aiContext);
@@ -171,7 +188,7 @@ export class InterviewService {
 
     return {
       reply: aiReply,
-      cutoff: userMessageCount >= 10
+      cutoff: shouldCutoff
     };
   }
 
