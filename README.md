@@ -91,7 +91,7 @@ The application depends on both frontend and backend instances communicating con
    ```
 3. Prepare Environment Variables. Create `.env` inside `/backend` (referencing standard credentials required across config):
    ```env
-   DATABASE_URL="postgresql://user:pass@localhost:5432/ai_interview"
+   DATABASE_URL="postgresql://user:pass@your_db_host:5432/ai_interview"
    OPENAI_API_KEY="sk-your-openai-api-key"
    PORT=8000
    ```
@@ -104,7 +104,7 @@ The application depends on both frontend and backend instances communicating con
    ```bash
    npm run dev
    ```
-   *The backend will boot up alongside the WebSocket server at `http://localhost:8000`.*
+   *The backend will boot up alongside the WebSocket server on your configured port.*
 
 ### Step 2: Setup the Frontend
 1. Open up a second terminal and navigate to the frontend directory:
@@ -122,13 +122,13 @@ The application depends on both frontend and backend instances communicating con
    CLERK_SECRET_KEY=sk_test_...
 
    # Specify Backend Local Endpoint
-   NEXT_PUBLIC_BACKEND_URL=http://localhost:8000
+   NEXT_PUBLIC_BACKEND_URL=https://your-production-backend-url.com
    ```
 4. Start the frontend development server:
    ```bash
    npm run dev
    ```
-   *The Next.js App Router will be accessible securely at `http://localhost:3001`.*
+   *The Next.js App Router will be built and started continuously.*
 
 ---
 

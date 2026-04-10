@@ -69,7 +69,7 @@ A production-ready ("enterprise-grid"), robust Node.js backend using Express, Ty
 - **Request Body**: `{ "sessionId": "UUID..." }`
 - **Response**: JSON Evaluation results (scores & recommendation).
 
-### 5. WebSocket Connection (`ws://localhost:3000`)
+### 5. WebSocket Connection (`wss://your-backend-url.com`)
 Clients can connect to socket via `socket.io-client` with events:
 - `emit('start_interview', { candidateName: 'x' })`
 - `emit('respond', { sessionId: 'xyz', text: 'response' })` 
