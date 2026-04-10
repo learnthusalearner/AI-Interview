@@ -3,6 +3,11 @@ import dotenv from 'dotenv';
 
 dotenv.config({ override: true });
 
+// Support alternate environment variable names that may come from tooling
+if (!process.env.OPENAI_API_KEY && process.env['.env.OPENAI_API_KEY']) {
+  process.env.OPENAI_API_KEY = process.env['.env.OPENAI_API_KEY'];
+}
+
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   PORT: z.string().default('3000'),

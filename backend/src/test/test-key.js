@@ -1,3 +1,5 @@
+const path = require('path');
+require('dotenv').config({ path: path.resolve(__dirname, '../../.env'), override: true });
 const API_KEY = process.env.OPENAI_API_KEY;
 
 async function testKey() {
