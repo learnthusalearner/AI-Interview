@@ -23,6 +23,11 @@ export default function InterviewPage() {
   const isBootingRef = useRef(false);
   const [isVideoActive, setIsVideoActive] = useState(false);
   const [faceDetected, setFaceDetected] = useState(false);
+  const sessionIdRef = useRef<string | null>(null);
+  
+  useEffect(() => {
+    sessionIdRef.current = sessionId;
+  }, [sessionId]);
   const engagementStats = useRef({ totalFrames: 0, faceDetectedFrames: 0 });
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const proctorViolations = useRef(0);
@@ -61,7 +66,8 @@ export default function InterviewPage() {
     }
 
     const captureAndAnalyzeFrame = async () => {
-      if (!videoRef.current || !active || !sessionId) return;
+      const currentSessionId = sessionIdRef.current;
+      if (!videoRef.current || !active || !currentSessionId) return;
       
       const video = videoRef.current;
       if (video.readyState !== video.HAVE_ENOUGH_DATA) return;
@@ -78,7 +84,7 @@ export default function InterviewPage() {
       const base64Image = canvas.toDataURL("image/jpeg", 0.5);
 
       try {
-        const result = await sendProctoringFrameAPI(sessionId, base64Image);
+        const result = await sendProctoringFrameAPI(currentSessionId, base64Image);
         engagementStats.current.totalFrames += 1;
         
         if (result.faceDetected) {
@@ -150,7 +156,7 @@ export default function InterviewPage() {
         streamRef.current.getTracks().forEach(t => t.stop());
       }
     };
-  }, [sessionId]);
+  }, []); // Reverted to [] to prevent camera teardown on sessionId change
 
   // Boot sequence loading texts
   useEffect(() => {
