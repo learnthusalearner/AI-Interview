@@ -62,6 +62,10 @@ export class OpenAIService {
       - simplicity: child-appropriate language without jargon.
       - patience: how well the answer shows support for a struggling student.
       - fluency: natural, coherent English with good sentence flow.
+      - engagement: how well they keep the listener hooked (voice dynamics via text proxy).
+
+      Also determine the responseQuality: "clear", "vague", "complex", or "off-topic".
+      If the response is extremely short (one-word) or silent, label it "vague" or "off-topic" accordingly.
 
       Score fairly based only on this answer. Do not add extra commentary.
       Return ONLY a raw JSON object matching this exact schema (no markdown, no extra text):
@@ -71,7 +75,9 @@ export class OpenAIService {
         "simplicity": 7,
         "patience": 8,
         "fluency": 9,
-        "average": 8.2
+        "engagement": 8,
+        "average": 8.1,
+        "responseQuality": "clear"
       }
     `;
 
@@ -88,7 +94,7 @@ export class OpenAIService {
     } catch (error) {
       logger.error(`Single Answer Eval Error: ${error}`);
       // Fallback safe scores so interview doesn't crash on one bad JSON
-      return { clarity: 5, warmth: 5, simplicity: 5, patience: 5, fluency: 5, average: 5.0 };
+      return { clarity: 5, warmth: 5, simplicity: 5, patience: 5, fluency: 5, engagement: 5, average: 5.0, responseQuality: "clear" };
     }
   }
 
@@ -103,13 +109,21 @@ export class OpenAIService {
       📊 EVALUATION
       --------------------------------------------------
       Provide a structured JSON output evaluating the candidate strictly on:
-      - clarity (1-10 string score representing 1-5 logically scaled x2)
+      - clarity (1-10 scale rating, plus detailed reasoning)
       - warmth (1-10)
       - patience (1-10)
       - simplicity (1-10)
       - fluency (1-10)
+      - engagement (1-10 scale rating based on pacing and hooks)
+      
+      Additionally, include robust metadata:
       - overallRecommendation ("PASS" or "FAIL")
-      - evidenceQuotes (array of strings)
+      - evidenceQuotes (array of at least 3 verbatim strings from the candidate)
+      - teachingStyle (string: 'example-driven', 'structured', 'unclear', 'authoritative', etc)
+      - riskFlags (array of strings, e.g., ["impatience", "vague", "jargon-heavy", "negative tone"])
+      - keyHighlights (array of strings praising specific good things they did)
+      - consistencyAnalysis (string summarizing if they improved or contradicted themselves)
+      - communicationStyleAnalysis (object with fields: structure (string), examplesUsed (boolean), stepByStep (boolean))
 
       --------------------------------------------------
       📏 SCORING GUIDELINES
@@ -122,18 +136,28 @@ export class OpenAIService {
 
       IMPORTANT:
       - Use actual quotes from candidate responses in \`evidenceQuotes\`
+      - Identify subtle "risk flags" like long monologues or skipping steps
       - Be fair, not overly harsh
-      - Do NOT hallucinate evidence
 
-      Return ONLY valid JSON in exactly this root-level schema shape (do NOT nest score/reasoning inside sub-objects, output exactly this):
+      Return ONLY valid JSON in exactly this root-level schema shape (do NOT nest score/reasoning inside sub-objects arbitrarily, output exactly this):
       {
         "clarity": { "score": 8, "reasoning": "..." },
         "simplicity": { "score": 7, "reasoning": "..." },
         "patience": { "score": 9, "reasoning": "..." },
         "warmth": { "score": 10, "reasoning": "..." },
         "fluency": { "score": 8, "reasoning": "..." },
+        "engagement": { "score": 8, "reasoning": "..." },
         "overallRecommendation": "PASS",
-        "evidenceQuotes": ["Quote 1 here", "Quote 2 here"]
+        "evidenceQuotes": ["Quote 1 here", "Quote 2 here", "Quote 3 here"],
+        "teachingStyle": "example-driven",
+        "riskFlags": ["none"],
+        "keyHighlights": ["Used excellent pizza analogy"],
+        "consistencyAnalysis": "Candidate consistently maintained a warm tone...",
+        "communicationStyleAnalysis": {
+           "structure": "excellent, highly logical",
+           "examplesUsed": true,
+           "stepByStep": true
+        }
       }
     `;
 
@@ -160,8 +184,14 @@ export class OpenAIService {
         patience: { score: 5, reasoning: "Evaluation generation failed." },
         warmth: { score: 5, reasoning: "Evaluation generation failed." },
         fluency: { score: 5, reasoning: "Evaluation generation failed." },
+        engagement: { score: 5, reasoning: "Evaluation generation failed." },
         overallRecommendation: "FAIL",
-        evidenceQuotes: []
+        evidenceQuotes: [],
+        teachingStyle: "unknown",
+        riskFlags: ["System fault"],
+        keyHighlights: [],
+        consistencyAnalysis: "Could not evaluate due to system error.",
+        communicationStyleAnalysis: { structure: "unknown", examplesUsed: false, stepByStep: false }
       };
     }
   }

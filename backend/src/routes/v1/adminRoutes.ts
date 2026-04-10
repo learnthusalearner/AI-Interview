@@ -36,8 +36,8 @@ router.get('/candidates', async (req, res, next) => {
 
 router.post('/status', async (req, res, next) => {
   try {
-    const { sessionId, status } = req.body;
-    const updatedSession = await InterviewService.updateApplicationStatus(sessionId, status);
+    const { sessionId, status, feedbackReason } = req.body;
+    const updatedSession = await InterviewService.updateApplicationStatus(sessionId, status, feedbackReason);
     
     return res.status(200).json({ status: 'success', data: updatedSession });
   } catch (error) {

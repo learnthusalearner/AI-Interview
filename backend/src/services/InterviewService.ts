@@ -14,6 +14,13 @@ Your primary goal is to assess the soft skills required for tutoring. This isn't
 5. English fluency – natural, easy-to-follow English flow
 
 --------------------------------------------------
+🎭 TEACHING SIMULATION MODE
+--------------------------------------------------
+- You are not just an interviewer; you must act like a confused 8-year-old student interacting with a tutor.
+- Interrupt occasionally, act confused, and ask "Why?" or "Can you explain that more simply?"
+- Present unique behavioral challenges (e.g., "I don't understand, my parents taught me differently!" or "I'm bored, can we play a game instead?").
+
+--------------------------------------------------
 🗣️ CONVERSATION STYLE
 --------------------------------------------------
 - Keep the conversation strictly natural, not robotic.
@@ -24,37 +31,28 @@ Your primary goal is to assess the soft skills required for tutoring. This isn't
 - Always stay in English.
 
 --------------------------------------------------
-❓ QUESTION STRATEGY
+🔄 ADAPTIVE BEHAVIOR & RAMBLING CONTROL
 --------------------------------------------------
-Use 5 to 7 strong conversational scenarios to reveal their true tutoring ability. 
-Do NOT ask the same questions every time. Create highly CREATIVE, UNIQUE, and UNEXPECTED but realistic teaching situations to test the 5 core parameters (Clarity, Warmth, Simplicity, Patience, Fluency). 
-
-For example, instead of standard math questions, you might ask them to explain a completely different topic (like gravity, probability, time zones, or why the sky is blue) to a young child. 
-Or present a unique behavioral challenge (e.g., "A student gets distracted by their pet cat on camera and won't focus", or "A student confidently gives the wrong answer and insists their parents taught them that way").
-
-Ensure that across the interview, you test:
-- Their ability to break down a complex, randomly chosen topic simply (Simplicity & Clarity).
-- Their reaction to a sudden emotional or behavioral shift from a student (Warmth).
-- Their patience when you (playing the student) repeatedly misunderstand a basic concept in different ways (Patience).
-
-Adapt dynamically based on the candidate's responses!
+- If the candidate gives an extremely long monlogue, interrupt them: "That's a lot of information, I'm a bit lost. Can you summarize?"
+- If they use generic analogies ("I would make it fun"), push back: "That sounds good, but could you give me a specific example of how you'd make it fun?"
+- If the answer is too complex or uses jargon, ask them to simplify it for a young child.
 
 --------------------------------------------------
-🔄 ADAPTIVE BEHAVIOR
+✨ MICRO-FEEDBACK SYSTEM
 --------------------------------------------------
-If they use generic analogies ("I would make it fun"), immediately push back: "That sounds good, but could you give me a specific example of how you'd make it fun?"
-If the answer is too complex, ask them to simplify it for a young child.
+- Provide occasional, brief positive reinforcement when they do well (e.g., "Oh, that's a great example!", "I like how you explained that."). This tests their flow and keeps the tone warm.
 
 --------------------------------------------------
-⚠️ RULES
+⚠️ RULES & BIAS CONTROL
 --------------------------------------------------
+- Never penalize a candidate for their accent or minor grammar mistakes.
 - Never switch to Urdu, Hindi, or any other language.
-- Do not teach the student yourself; remain an interviewer.
+- Do not teach the student yourself; remain an interviewer/student.
 - Do not ask purely factual questions or test raw academic knowledge.
 - Do not sound robotic, scripted, or overly formal.
 - Do not change the subject away from teaching practice.
 
-Begin by greeting the candidate warmly and asking the first creative scenario-based question. Make sure to highly RANDOMIZE the first scenario you pick so different candidates get completely different starting experiences.
+Begin by greeting the candidate warmly, providing a friendly human-like intro, and asking the first creative scenario-based problem. Make sure to highly RANDOMIZE the first scenario you pick so different candidates get completely different starting experiences.
 `;
 
 export class InterviewService {
@@ -123,7 +121,8 @@ export class InterviewService {
         warmth: evalData.warmth,
         simplicity: evalData.simplicity,
         patience: evalData.patience,
-        fluency: evalData.fluency
+        fluency: evalData.fluency,
+        engagement: evalData.engagement
       }
     });
 
@@ -132,6 +131,24 @@ export class InterviewService {
     // Append to array for AI context
     const aiContext = session.messages.map(m => ({ role: m.role, content: m.content }));
     aiContext.push({ role: 'user', content: userText });
+
+    // Dynamic Edge Case Injection based on response quality
+    if (evalData.responseQuality === "vague") {
+      aiContext.push({
+        role: 'system',
+        content: 'SYSTEM INSTRUCTION: The candidate\'s last response was vague. Push them to be much more specific.'
+      });
+    } else if (evalData.responseQuality === "complex") {
+      aiContext.push({
+        role: 'system',
+        content: 'SYSTEM INSTRUCTION: The candidate is using language that is too complex. Act confused and ask them to simplify.'
+      });
+    } else if (evalData.responseQuality === "off-topic") {
+      aiContext.push({
+        role: 'system',
+        content: 'SYSTEM INSTRUCTION: The candidate is going off-topic. Politely steer them back to a real teaching scenario.'
+      });
+    }
 
     // Adaptive System Cutoff Instruction
     if (userMessageCount >= 10) {
@@ -161,7 +178,7 @@ export class InterviewService {
   /**
    * Completes and evaluates the session
    */
-  static async evaluateSession(sessionId: string) {
+  static async evaluateSession(sessionId: string, videoEngagementScore?: number, cheatFlags?: string[]) {
     const session = await prisma.interviewSession.findUnique({
       where: { id: sessionId },
       include: { messages: { orderBy: { createdAt: 'asc' } } }
@@ -174,15 +191,41 @@ export class InterviewService {
       .map(m => ({ role: m.role, content: m.content }));
 
     const evaluation = await OpenAIService.evaluateInterview(apiMessages);
+    
+    // Inject visual score override if front-end ML processed it
+    if (videoEngagementScore !== undefined && typeof videoEngagementScore === 'number' && evaluation.engagement) {
+      evaluation.engagement.score = videoEngagementScore;
+      evaluation.engagement.reasoning = `(Visual Override) Camera tracking detected ${videoEngagementScore * 10}% visual engagement during the session.`;
+    }
+
+    let totalCheatCount = 0;
+    if (cheatFlags && cheatFlags.length > 0) {
+      const mobileCount = cheatFlags.filter(f => f === "MOBILE_PHONE").length;
+      const absentCount = cheatFlags.filter(f => f === "ABSENT_USER").length;
+      totalCheatCount = mobileCount + absentCount;
+
+      evaluation.proctoringSummary = {
+         mobilePhoneCount: mobileCount,
+         absenceCount: absentCount
+      };
+
+      const customFlags = [];
+      if (mobileCount > 0) customFlags.push(`PROCTOR VIOLATION: Unauthorized device (Mobile) detected ${mobileCount} time(s).`);
+      if (absentCount > 0) customFlags.push(`PROCTOR VIOLATION: Candidate left camera view ${absentCount} time(s).`);
+
+      evaluation.riskFlags = [...(evaluation.riskFlags || []), ...customFlags];
+      evaluation.overallRecommendation = "FLAGGED";
+    }
 
     // Update session
     await prisma.interviewSession.update({
       where: { id: sessionId },
       data: {
         status: 'COMPLETED',
+        cheatCount: totalCheatCount,
         evaluationData: evaluation,
         overallRecommendation: evaluation.overallRecommendation || 'UNKNOWN',
-        totalScore: (evaluation.clarity?.score || 0) + (evaluation.warmth?.score || 0) + (evaluation.simplicity?.score || 0) + (evaluation.patience?.score || 0) + (evaluation.fluency?.score || 0)
+        totalScore: (evaluation.clarity?.score || 0) + (evaluation.warmth?.score || 0) + (evaluation.simplicity?.score || 0) + (evaluation.patience?.score || 0) + (evaluation.fluency?.score || 0) + (evaluation.engagement?.score || 0)
       }
     });
 
@@ -215,13 +258,27 @@ export class InterviewService {
   /**
    * Update application status and send email
    */
-  static async updateApplicationStatus(sessionId: string, status: 'ACCEPTED' | 'REJECTED') {
+  static async updateApplicationStatus(sessionId: string, status: 'ACCEPTED' | 'REJECTED', feedbackReason?: string) {
     const session = await prisma.interviewSession.findUnique({ where: { id: sessionId } });
     if (!session) throw new AppError('Session not found', 404);
 
+    let fraudEvaluationData = undefined;
+    if (feedbackReason && status === 'REJECTED') {
+      fraudEvaluationData = {
+        overallRecommendation: "TERMINATED",
+        teachingStyle: "UNAUTHORIZED",
+        keyHighlights: ["Interview was abruptly ended due to an automated proctoring violation."],
+        riskFlags: [`PROCTOR VIOLATION: ${feedbackReason}`],
+        clarity: {score: 0}, warmth: {score: 0}, simplicity: {score: 0}, patience: {score: 0}, fluency: {score: 0}, engagement: {score: 0}
+      };
+    }
+
     const updatedSession = await prisma.interviewSession.update({
       where: { id: sessionId },
-      data: { applicationStatus: status }
+      data: { 
+        applicationStatus: status,
+        ...(fraudEvaluationData ? { evaluationData: fraudEvaluationData, overallRecommendation: 'TERMINATED', totalScore: 0 } : {})
+      }
     });
     
     if (session.candidateEmail) {

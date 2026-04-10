@@ -15,6 +15,7 @@ model InterviewSession {
   status                SessionStatus     @default(IN_PROGRESS)
   overallRecommendation String?
   totalScore            Float?            @default(0.0)
+  cheatCount            Int               @default(0)
   evaluationData        Json?
   feedback              String?
   createdAt             DateTime          @default(now())
@@ -37,6 +38,7 @@ model Message {
   simplicity         Int?
   patience           Int?
   fluency            Int?
+  engagement         Int?
 }
 
 enum SessionStatus {

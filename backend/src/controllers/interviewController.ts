@@ -24,8 +24,8 @@ export class InterviewController {
 
   static async evaluate(req: Request, res: Response) {
     try {
-      const { sessionId } = req.body;
-      const result = await InterviewService.evaluateSession(sessionId);
+      const { sessionId, videoEngagementScore, cheatFlags } = req.body;
+      const result = await InterviewService.evaluateSession(sessionId, videoEngagementScore, cheatFlags);
       res.status(200).json({ success: true, data: result });
     } catch (error: any) {
       res.status(500).json({ success: false, message: error.message });
