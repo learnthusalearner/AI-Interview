@@ -146,7 +146,7 @@ export class InterviewService {
       shouldCutoff = true;
       aiContext.push({
         role: 'system',
-        content: 'SYSTEM INSTRUCTION: The candidate\\'s last answer was completely unsatisfactory or off-topic. Inform them politely but firmly that the interview is being terminated early due to this, and end the conversation immediately in one sentence.'
+        content: "SYSTEM INSTRUCTION: The candidate's last answer was completely unsatisfactory or off-topic. Inform them politely but firmly that the interview is being terminated early due to this, and end the conversation immediately in one sentence."
       });
     } else {
       // Normal pacing and edge-case injection
@@ -158,7 +158,7 @@ export class InterviewService {
       if (evalData.responseQuality === "vague") {
         aiContext.push({
           role: 'system',
-          content: 'SYSTEM INSTRUCTION: The candidate\\'s last response was vague. Push them to be much more specific.'
+          content: "SYSTEM INSTRUCTION: The candidate's last response was vague. Push them to be much more specific."
         });
       } else if (evalData.responseQuality === "complex") {
         aiContext.push({
