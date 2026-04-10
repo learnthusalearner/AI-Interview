@@ -10,6 +10,7 @@ const env_1 = require("./config/env");
 const logger_1 = require("./config/logger");
 const prisma_1 = require("./config/prisma");
 const sockets_1 = require("./sockets");
+const keepAlive_1 = require("./utils/keepAlive");
 const server = http_1.default.createServer(app_1.default);
 const io = new socket_io_1.Server(server, {
     cors: {
@@ -24,10 +25,11 @@ server.listen(PORT, async () => {
         await prisma_1.prisma.$connect();
         logger_1.logger.info('📦 Connected to PostgreSQL DB via Prisma');
         logger_1.logger.info(`🚀 Server running in ${env_1.env.NODE_ENV} mode on port ${PORT}`);
+        (0, keepAlive_1.startKeepAlive)();
     }
     catch (error) {
-        logger_1.logger.error('Failed to connect to database', error);
-        process.exit(1);
+        logger_1.logger.error('Database connection might be delayed. Prisma will lazily connect on next request.', error.message);
+        (0, keepAlive_1.startKeepAlive)();
     }
 });
 const gracefulShutdown = async (signal) => {

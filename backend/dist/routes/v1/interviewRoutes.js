@@ -8,4 +8,6 @@ const router = (0, express_1.Router)();
 router.post('/start', (0, validateRequest_1.validate)(interviewValidation_1.startInterviewSchema), interviewController_1.InterviewController.start);
 router.post('/respond', (0, validateRequest_1.validate)(interviewValidation_1.respondInterviewSchema), interviewController_1.InterviewController.respond);
 router.post('/evaluate', (0, validateRequest_1.validate)(interviewValidation_1.evaluateInterviewSchema), interviewController_1.InterviewController.evaluate);
+router.post('/feedback', (0, validateRequest_1.validate)(interviewValidation_1.submitFeedbackSchema), interviewController_1.InterviewController.submitFeedback);
+router.get('/candidate/sessions/:email', interviewController_1.InterviewController.getSessionsByEmail);
 exports.default = router;

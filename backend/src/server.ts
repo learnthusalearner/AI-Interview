@@ -5,6 +5,7 @@ import { env } from './config/env';
 import { logger } from './config/logger';
 import { prisma } from './config/prisma';
 import { setupSockets } from './sockets';
+import { startKeepAlive } from './utils/keepAlive';
 
 const server = http.createServer(app);
 
@@ -24,8 +25,10 @@ server.listen(PORT, async () => {
     await prisma.$connect();
     logger.info('📦 Connected to PostgreSQL DB via Prisma');
     logger.info(`🚀 Server running in ${env.NODE_ENV} mode on port ${PORT}`);
+    startKeepAlive();
   } catch (error: any) {
     logger.error('Database connection might be delayed. Prisma will lazily connect on next request.', error.message);
+    startKeepAlive();
   }
 });
 
