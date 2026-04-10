@@ -1,5 +1,6 @@
 import { prisma } from '../config/prisma';
 import { OpenAIService } from './OpenAIService';
+import { EmailService } from './EmailService';
 import { AppError } from '../utils/AppError';
 import { Role } from '@prisma/client';
 
@@ -222,14 +223,11 @@ export class InterviewService {
       where: { id: sessionId },
       data: { applicationStatus: status }
     });
-
-    // We'll call the EmailService here, but since we are inside InterviewService,
-    // let's just let the controller handle Email injection to avoid circular deps, 
-    // or we can import EmailService since it's a sibling.
-    const { EmailService } = await import('./EmailService');
     
     if (session.candidateEmail) {
       await EmailService.sendDecisionEmail(session.candidateEmail, status, session.candidateName);
+    } else {
+      console.warn(`No candidate email found for session ${sessionId}. Skipping email dispatch.`);
     }
 
     return updatedSession;

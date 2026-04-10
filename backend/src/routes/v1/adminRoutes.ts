@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { prisma } from '../../config/prisma';
 import { AppError } from '../../utils/AppError';
+import { InterviewService } from '../../services/InterviewService';
 
 const router = Router();
 
@@ -36,7 +37,6 @@ router.get('/candidates', async (req, res, next) => {
 router.post('/status', async (req, res, next) => {
   try {
     const { sessionId, status } = req.body;
-    const { InterviewService } = await import('../../services/InterviewService');
     const updatedSession = await InterviewService.updateApplicationStatus(sessionId, status);
     
     return res.status(200).json({ status: 'success', data: updatedSession });
