@@ -126,23 +126,24 @@ export default function InterviewPage() {
 
   return (
     <div className="flex flex-col h-screen bg-black overflow-hidden relative">
-      {/* Background Decorators */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-3/4 h-3/4 bg-teal-900/10 blur-[120px] rounded-full pointer-events-none" />
+      {/* Premium Dark Space Background */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-violet-900/10 via-black to-black pointer-events-none" />
+      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-cyan-900/20 blur-[150px] rounded-full pointer-events-none" />
 
       {/* Header */}
-      <header className="px-6 py-4 flex justify-between items-center border-b border-white/5 bg-black/50 backdrop-blur-md z-10">
-        <div className="flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full bg-teal-500 shadow-[0_0_10px_rgba(20,184,166,0.6)] animate-pulse" />
-          <span className="text-zinc-300 font-medium tracking-wide">Live Interview</span>
+      <header className="px-6 py-4 flex justify-between items-center border-b border-white/5 bg-black/40 backdrop-blur-2xl z-10">
+        <div className="flex items-center gap-3 relative">
+          <div className="w-2.5 h-2.5 rounded-full bg-cyan-400 shadow-[0_0_12px_rgba(34,211,238,0.8)] animate-pulse" />
+          <span className="text-zinc-200 font-semibold tracking-wider uppercase text-xs">Lumina Core Active</span>
         </div>
         <Button 
           variant="outline" 
           size="sm" 
           onClick={handleFinish}
           disabled={isProcessing || isRecording || isEvaluating}
-          className="border-zinc-800 text-zinc-300 hover:bg-zinc-800 hover:text-white"
+          className="border-white/10 text-zinc-300 hover:bg-white/5 hover:text-white backdrop-blur-md transition-all rounded-full px-6"
         >
-          {isEvaluating ? <Loader2 className="w-4 h-4 animate-spin" /> : "Complete Session"}
+          {isEvaluating ? <Loader2 className="w-4 h-4 animate-spin" /> : "Conclude Session"}
         </Button>
       </header>
 
@@ -157,10 +158,10 @@ export default function InterviewPage() {
               className={`flex w-full ${msg.role === "assistant" ? "justify-start" : "justify-end"}`}
             >
               <div 
-                className={`max-w-[80%] rounded-2xl p-4 leading-relaxed tracking-wide text-sm md:text-base ${
+                className={`max-w-[80%] rounded-3xl p-5 leading-relaxed tracking-wide text-sm md:text-base border shadow-2xl backdrop-blur-md ${
                   msg.role === "assistant" 
-                  ? "bg-zinc-900/80 border border-white/5 text-zinc-100 rounded-bl-sm" 
-                  : "bg-teal-600/90 text-white rounded-br-sm shadow-[0_4px_20px_rgba(13,148,136,0.2)]"
+                  ? "bg-black/60 border-white/10 text-zinc-100 rounded-tl-sm shadow-[0_4px_30px_rgba(0,0,0,0.5)]" 
+                  : "bg-gradient-to-tr from-cyan-600 to-cyan-500 border-cyan-400/20 text-white rounded-tr-sm shadow-[0_4px_25px_rgba(34,211,238,0.25)]"
                 }`}
               >
                 {msg.content}
@@ -189,27 +190,27 @@ export default function InterviewPage() {
         <button
           onClick={handleRecordToggle}
           disabled={isProcessing}
-          className={`relative group flex items-center justify-center w-20 h-20 rounded-full transition-all duration-300 ease-out focus:outline-none ${
+          className={`relative group flex items-center justify-center w-24 h-24 rounded-full transition-all duration-500 ease-out focus:outline-none ${
              isProcessing 
-              ? "bg-zinc-800 cursor-not-allowed"
+              ? "bg-zinc-900 border border-white/5 cursor-not-allowed"
               : isRecording 
-                ? "bg-red-500/10 border border-red-500/50" 
-                : "bg-teal-500 shadow-[0_0_40px_rgba(20,184,166,0.3)] hover:scale-105"
+                ? "bg-red-500/10 border border-red-500/50 shadow-[0_0_50px_rgba(239,68,68,0.4)]" 
+                : "bg-gradient-to-br from-cyan-400 to-violet-500 shadow-[0_0_40px_rgba(139,92,246,0.4)] hover:shadow-[0_0_60px_rgba(34,211,238,0.6)] hover:scale-105 border border-white/20"
           }`}
         >
           {isRecording ? (
-            <Square className="w-8 h-8 text-red-500 fill-red-500 animate-pulse" />
+            <div className="w-8 h-8 bg-red-500 rounded-sm animate-pulse shadow-[0_0_15px_rgba(239,68,68,0.8)]" />
           ) : isProcessing ? (
-            <Loader2 className="w-8 h-8 text-zinc-500 animate-spin" />
+            <Loader2 className="w-8 h-8 text-zinc-400 animate-spin" />
           ) : (
-            <Mic className="w-8 h-8 text-black" />
+            <Mic className="w-10 h-10 text-white drop-shadow-md" />
           )}
 
-          {/* UIverse Style Recording Rings */}
+          {/* Premium Aurora Recording Rings */}
           {isRecording && (
             <>
-              <span className="absolute w-[180%] h-[180%] border border-red-500/30 rounded-full animate-ping duration-[3000ms]" />
-              <span className="absolute w-[140%] h-[140%] border border-red-500/50 rounded-full animate-ping duration-[2000ms]" />
+              <span className="absolute w-[160%] h-[160%] border border-red-500/40 rounded-full animate-ping duration-[3000ms]" />
+              <span className="absolute w-[130%] h-[130%] border border-red-500/60 rounded-full animate-ping duration-[2000ms]" />
             </>
           )}
         </button>

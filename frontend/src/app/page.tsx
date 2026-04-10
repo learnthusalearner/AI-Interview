@@ -52,9 +52,9 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-zinc-900 via-zinc-950 to-black flex items-center justify-center p-4">
-      {/* Background Decorative Blobs */}
-      <div className="absolute top-0 opacity-20 transform translate-x-1/4 -translate-y-1/4 w-[500px] h-[500px] bg-teal-500 rounded-full blur-3xl" />
-      <div className="absolute bottom-0 opacity-20 transform -translate-x-1/4 translate-y-1/4 w-[400px] h-[400px] bg-indigo-500 rounded-full blur-3xl" />
+      {/* Premium Aurora Background Blobs */}
+      <div className="absolute top-0 opacity-30 transform translate-x-1/4 -translate-y-1/4 w-[600px] h-[600px] bg-cyan-600 rounded-full blur-[100px]" />
+      <div className="absolute bottom-0 opacity-30 transform -translate-x-1/4 translate-y-1/4 w-[500px] h-[500px] bg-violet-600 rounded-full blur-[120px]" />
 
       <motion.div
         initial={{ opacity: 0, y: 30 }}
@@ -62,17 +62,17 @@ export default function LandingPage() {
         transition={{ duration: 0.8, ease: "easeOut" }}
         className="w-full max-w-lg z-10"
       >
-        <Card className="border border-white/10 bg-black/40 backdrop-blur-xl shadow-2xl p-8 rounded-3xl relative overflow-hidden">
+        <Card className="border border-white/5 bg-black/40 backdrop-blur-2xl shadow-[0_0_50px_rgba(0,0,0,0.5)] p-8 rounded-[2rem] relative overflow-hidden">
           <div className="flex flex-col items-center text-center space-y-6">
-            <div className="h-16 w-16 bg-white/5 rounded-2xl flex items-center justify-center border border-white/10 shadow-inner mb-2">
-              <Mic className="w-8 h-8 text-teal-400 drop-shadow-[0_0_8px_rgba(45,212,191,0.5)]" />
+            <div className="h-16 w-16 bg-gradient-to-br from-cyan-500/10 to-violet-500/10 rounded-2xl flex items-center justify-center border border-white/10 shadow-inner mb-2">
+              <Mic className="w-8 h-8 text-cyan-400 drop-shadow-[0_0_12px_rgba(34,211,238,0.5)]" />
             </div>
             
             <div className="space-y-2">
-              <h1 className="text-3xl font-semibold tracking-tight text-white">
-                Alpha AI Screener
+              <h1 className="text-4xl font-semibold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-white via-cyan-100 to-white">
+                Lumina AI
               </h1>
-              <p className="text-sm text-zinc-400">
+              <p className="text-sm text-zinc-400 tracking-wide">
                 A naturally conversational, voice-driven AI waiting to interview you.
               </p>
             </div>
@@ -107,39 +107,39 @@ export default function LandingPage() {
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {/* Antigravity Floating Interview Button */}
+                    {/* Lumina Glowing Interview Button */}
                     <motion.div
-                      animate={{ y: [0, -8, 0], rotate: [0, 1, -1, 0] }}
+                      animate={{ y: [0, -6, 0] }}
                       transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
                     >
                       <Button
                         onClick={handleStart}
                         disabled={isStarting}
-                        className="w-full h-32 bg-teal-500/10 hover:bg-teal-500/20 border border-teal-500/50 text-teal-400 font-semibold rounded-2xl transition-all flex flex-col items-center justify-center gap-2 group shadow-[0_0_20px_rgba(20,184,166,0.15)] hover:shadow-[0_0_30px_rgba(20,184,166,0.3)]"
+                        className="w-full h-32 bg-gradient-to-b from-cyan-500/10 to-transparent hover:from-cyan-500/20 border border-cyan-500/30 text-cyan-300 font-medium rounded-2xl transition-all flex flex-col items-center justify-center gap-2 group shadow-[0_0_20px_rgba(34,211,238,0.05)] hover:shadow-[0_0_30px_rgba(34,211,238,0.2)] backdrop-blur-sm"
                       >
                         {isStarting ? (
-                          "Initializing Zero-G..."
+                          <span className="animate-pulse tracking-widest text-xs uppercase">Initializing core...</span>
                         ) : (
                           <>
                             <Mic className="w-8 h-8 group-hover:scale-110 transition-transform" />
-                            <span>Start Virtual Interview</span>
+                            <span className="tracking-wide">Launch Interview</span>
                           </>
                         )}
                       </Button>
                     </motion.div>
 
-                    {/* Antigravity Floating Admin Button */}
+                    {/* Admin Passkey Button */}
                     <Link href="/admin" className="block w-full">
                       <motion.div
-                        animate={{ y: [0, 8, 0], rotate: [0, -1, 1, 0] }}
+                        animate={{ y: [0, 6, 0] }}
                         transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
                       >
                         <Button
                           variant="outline"
-                          className="w-full h-32 bg-zinc-900/50 hover:bg-zinc-800 border-zinc-700 text-zinc-300 font-semibold rounded-2xl transition-all flex flex-col items-center justify-center gap-2 group"
+                          className="w-full h-32 bg-gradient-to-b from-violet-500/5 to-transparent hover:from-violet-500/10 border border-violet-500/20 text-violet-300 font-medium rounded-2xl transition-all flex flex-col items-center justify-center gap-2 group backdrop-blur-sm"
                         >
-                          <Shield className="w-8 h-8 group-hover:scale-110 transition-transform text-indigo-400" />
-                          <span>Admin Passkey</span>
+                          <Shield className="w-8 h-8 group-hover:scale-110 transition-transform text-violet-400" />
+                          <span className="tracking-wide">Admin Portal</span>
                         </Button>
                       </motion.div>
                     </Link>

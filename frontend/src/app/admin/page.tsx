@@ -83,10 +83,10 @@ export default function AdminPage() {
         <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}>
           <Card className="w-full max-w-sm bg-zinc-900 border-zinc-800">
             <CardHeader className="text-center space-y-2">
-              <div className="mx-auto w-12 h-12 bg-white/5 rounded-full flex items-center justify-center">
-                <Shield className="w-6 h-6 text-teal-500" />
+              <div className="mx-auto w-12 h-12 bg-gradient-to-tr from-violet-500/10 to-cyan-500/10 rounded-full flex items-center justify-center border border-white/10">
+                <Shield className="w-6 h-6 text-cyan-400" />
               </div>
-              <CardTitle className="text-white">Admin Hub</CardTitle>
+              <CardTitle className="text-white text-2xl font-bold tracking-tight">Lumina Command</CardTitle>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleLogin} className="space-y-4">
@@ -135,16 +135,16 @@ export default function AdminPage() {
         {isLoading ? (
           <div className="text-center py-20 text-teal-500 animate-pulse font-semibold">Loading Applicant Data...</div>
         ) : (
-          <div className="overflow-x-auto rounded-xl border border-zinc-800 bg-zinc-900/40">
-            <table className="w-full text-left text-sm text-zinc-400">
-              <thead className="bg-black text-white text-xs uppercase tracking-wider">
+          <div className="overflow-x-auto rounded-xl border border-white/5 bg-black/40 backdrop-blur-md shadow-2xl">
+            <table className="w-full text-left text-sm text-zinc-300">
+              <thead className="bg-zinc-950/50 text-zinc-400 text-xs uppercase tracking-widest border-b border-white/5">
                 <tr>
-                  <th className="px-6 py-4 font-medium">Candidate Profile</th>
-                  <th className="px-6 py-4 font-medium">Analytics: Strong Points</th>
-                  <th className="px-6 py-4 font-medium">Analytics: Weak Points</th>
-                  <th className="px-6 py-4 font-medium text-center">AI Total Score</th>
-                  <th className="px-6 py-4 font-medium text-center">Status</th>
-                  <th className="px-6 py-4 font-medium text-right">Decisions</th>
+                  <th className="px-6 py-5 font-semibold">Candidate Profile</th>
+                  <th className="px-6 py-5 font-semibold">Analytics: Strong Points</th>
+                  <th className="px-6 py-5 font-semibold">Analytics: Weak Points</th>
+                  <th className="px-6 py-5 font-semibold text-center">AI Total Score</th>
+                  <th className="px-6 py-5 font-semibold text-center">Status</th>
+                  <th className="px-6 py-5 font-semibold text-right">Decisions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-zinc-800/60">
@@ -171,28 +171,28 @@ export default function AdminPage() {
                           <Mail className="w-3 h-3" /> {c.candidateEmail || "No Email"}
                         </div>
                       </td>
-                      <td className="px-6 py-4 text-emerald-400 font-medium capitalize">{analytics.strong}</td>
-                      <td className="px-6 py-4 text-rose-400 font-medium capitalize">{analytics.weak}</td>
-                      <td className="px-6 py-4 text-center">
-                        <span className="bg-zinc-800 text-teal-400 px-3 py-1 rounded-full font-mono">
+                      <td className="px-6 py-5 text-cyan-400 font-medium capitalize">{analytics.strong}</td>
+                      <td className="px-6 py-5 text-rose-400 font-medium capitalize">{analytics.weak}</td>
+                      <td className="px-6 py-5 text-center">
+                        <span className="bg-violet-500/10 border border-violet-500/20 text-violet-300 px-3 py-1 rounded-full font-mono shadow-[0_0_10px_rgba(139,92,246,0.1)]">
                            {c.totalScore}/50
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-center">
+                      <td className="px-6 py-5 text-center">
                          {c.applicationStatus === 'PENDING' ? (
-                           <span className="text-yellow-500 bg-yellow-500/10 px-2 py-1 rounded text-xs font-semibold">PENDING</span>
+                           <span className="text-yellow-400 bg-yellow-400/10 border border-yellow-400/20 px-2 py-1 rounded text-xs font-semibold uppercase tracking-wider">PENDING</span>
                          ) : c.applicationStatus === 'ACCEPTED' ? (
-                           <span className="text-teal-500 bg-teal-500/10 px-2 py-1 rounded text-xs font-semibold">SELECTED</span>
+                           <span className="text-cyan-400 bg-cyan-400/10 border border-cyan-400/20 px-2 py-1 rounded text-xs font-semibold uppercase tracking-wider">SELECTED</span>
                          ) : (
-                           <span className="text-rose-500 bg-rose-500/10 px-2 py-1 rounded text-xs font-semibold">REJECTED</span>
+                           <span className="text-rose-400 bg-rose-400/10 border border-rose-400/20 px-2 py-1 rounded text-xs font-semibold uppercase tracking-wider">REJECTED</span>
                          )}
                       </td>
-                      <td className="px-6 py-4 text-right">
+                      <td className="px-6 py-5 text-right">
                         <Button 
                           size="sm" 
                           variant="secondary"
                           onClick={() => setSelectedCandidate(c)}
-                          className="bg-zinc-800 text-teal-400 hover:bg-teal-500 hover:text-black transition-all"
+                          className="bg-zinc-800/80 text-cyan-300 border border-cyan-500/20 hover:bg-cyan-500 hover:text-black transition-all shadow-[0_0_15px_rgba(34,211,238,0.1)]"
                         >
                           Deep Evaluate
                         </Button>
@@ -266,15 +266,15 @@ export default function AdminPage() {
                         Metrics Projection
                       </h3>
                       
-                      {/* CSS 3D Isometric Chart */}
+                      {/* CSS 3D Isometric Chart - Lumina Colors */}
                       <div className="flex-1 flex items-center justify-center -mt-10 overflow-visible relative">
                         <div className="w-[300px] h-[300px] [transform:rotateX(60deg)_rotateZ(-45deg)] [transform-style:preserve-3d] flex items-end justify-between gap-6">
                            {[
-                             { label: 'Clarity', val: selectedCandidate.evaluationData?.clarity?.score || 0, color: '#3b82f6', dark: '#1d4ed8', top: '#6aabff' },
-                             { label: 'Simplicity', val: selectedCandidate.evaluationData?.simplicity?.score || 0, color: '#14b8a6', dark: '#0f766e', top: '#4de8d5' },
-                             { label: 'Patience', val: selectedCandidate.evaluationData?.patience?.score || 0, color: '#a855f7', dark: '#7e22ce', top: '#d08eff' },
-                             { label: 'Warmth', val: selectedCandidate.evaluationData?.warmth?.score || 0, color: '#f97316', dark: '#c2410c', top: '#ff9c54' },
-                             { label: 'Fluency', val: selectedCandidate.evaluationData?.fluency?.score || 0, color: '#22c55e', dark: '#15803d', top: '#63ea92' }
+                             { label: 'Clarity', val: selectedCandidate.evaluationData?.clarity?.score || 0, color: '#06b6d4', dark: '#0891b2', top: '#67e8f9' },
+                             { label: 'Simplicity', val: selectedCandidate.evaluationData?.simplicity?.score || 0, color: '#3b82f6', dark: '#2563eb', top: '#93c5fd' },
+                             { label: 'Patience', val: selectedCandidate.evaluationData?.patience?.score || 0, color: '#8b5cf6', dark: '#7c3aed', top: '#c4b5fd' },
+                             { label: 'Warmth', val: selectedCandidate.evaluationData?.warmth?.score || 0, color: '#ec4899', dark: '#db2777', top: '#f9a8d4' },
+                             { label: 'Fluency', val: selectedCandidate.evaluationData?.fluency?.score || 0, color: '#10b981', dark: '#059669', top: '#6ee7b7' }
                            ].map((m, i) => (
                              <motion.div 
                                key={m.label}
@@ -331,8 +331,8 @@ export default function AdminPage() {
                         ) : (
                           selectedCandidate.messages.map((msg: any, i: number) => (
                             <div key={i} className={`flex w-full ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                               <div className={`max-w-[85%] rounded-2xl p-4 ${msg.role === 'user' ? 'bg-zinc-800 text-zinc-200 rounded-tr-sm border border-zinc-700 shadow-lg' : 'bg-teal-950/40 text-teal-100 rounded-tl-sm border border-teal-900/50 shadow-lg'}`}>
-                                  <p className="text-xs font-semibold mb-2 opacity-50 uppercase tracking-widest">{msg.role === 'user' ? selectedCandidate.candidateName : 'Alpha AI'}</p>
+                               <div className={`max-w-[85%] rounded-3xl p-4 shadow-xl backdrop-blur-md border ${msg.role === 'user' ? 'bg-black/60 text-zinc-200 rounded-tr-sm border-white/5' : 'bg-gradient-to-tr from-violet-900/40 to-cyan-900/40 text-cyan-50 rounded-tl-sm border-white/10'}`}>
+                                  <p className="text-xs font-bold mb-2 opacity-60 uppercase tracking-widest">{msg.role === 'user' ? selectedCandidate.candidateName : 'Lumina Core'}</p>
                                   <p className="text-sm leading-relaxed">{msg.content}</p>
                                </div>
                             </div>
