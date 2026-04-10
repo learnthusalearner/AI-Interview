@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Mic, Square, Loader2, ArrowRight } from "lucide-react";
 import { useInterviewStore } from "@/lib/store";
 import { useAudioRecorder } from "@/hooks/useAudioRecorder";
-import { transcribeAudioAPI, respondInterviewAPI, evaluateInterviewAPI, submitFeedbackAPI, updateApplicationStatusAPI, startInterviewAPI } from "@/services/api";
+import { transcribeAudioAPI, respondInterviewAPI, evaluateInterviewAPI, submitFeedbackAPI, updateApplicationStatusAPI, startInterviewAPI, sendProctoringFrameAPI } from "@/services/api";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Copy, Check, MessageSquareHeart, Camera, CameraOff, ScanFace } from "lucide-react";
@@ -24,9 +24,7 @@ export default function InterviewPage() {
   const [isVideoActive, setIsVideoActive] = useState(false);
   const [faceDetected, setFaceDetected] = useState(false);
   const engagementStats = useRef({ totalFrames: 0, faceDetectedFrames: 0 });
-  const detectorRef = useRef<any>(null);
-  const cocoSsdRef = useRef<any>(null);
-  const requestRef = useRef<number>();
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const proctorViolations = useRef(0);
   
   const cheatFlags = useRef<string[]>([]);
@@ -52,47 +50,57 @@ export default function InterviewPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  // Video Intelligence Init (True ML via Blazeface + Coco-SSD)
+  // Video Processing Polling via Backend
   useEffect(() => {
     let active = true;
+    let intervalId: NodeJS.Timeout;
 
-    const detectFrame = async () => {
-      if (!videoRef.current || !detectorRef.current || !active) return;
+    // hidden canvas to capture frame
+    if (!canvasRef.current) {
+        canvasRef.current = document.createElement("canvas");
+    }
+
+    const captureAndAnalyzeFrame = async () => {
+      if (!videoRef.current || !active || !sessionId) return;
       
+      const video = videoRef.current;
+      if (video.readyState !== video.HAVE_ENOUGH_DATA) return;
+
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const base64Image = canvas.toDataURL("image/jpeg", 0.5);
+
       try {
-        // 1. Blazeface face tracking
-        const predictions = await detectorRef.current.estimateFaces(videoRef.current, false);
+        const result = await sendProctoringFrameAPI(sessionId, base64Image);
         engagementStats.current.totalFrames += 1;
-        if (predictions && predictions.length > 0) {
+        
+        if (result.faceDetected) {
           engagementStats.current.faceDetectedFrames += 1;
           setFaceDetected(true);
           proctorViolations.current = 0; // Reset absence counter
         } else {
           setFaceDetected(false);
           proctorViolations.current += 1;
-          // ~5-7 seconds of absence
-          // ~3 seconds of absence (assuming ~30fps)
-          if (proctorViolations.current > 90) {
+          // ~3-4 frames absence (~9-12 seconds since we poll every 3s)
+          if (proctorViolations.current > 3) {
             handleProctorViolation("ABSENT_USER");
-            proctorViolations.current = 0; // Reset after flag
+            proctorViolations.current = 0; 
           }
         }
 
-        // 2. COCO-SSD Object Detection (pulsed every 20 frames to save CPU)
-        if (engagementStats.current.totalFrames % 20 === 0 && cocoSsdRef.current && active) {
-            const objects = await cocoSsdRef.current.detect(videoRef.current);
-            const hasPhone = objects.some((obj: any) => obj.class === "cell phone");
-            if (hasPhone) {
-               handleProctorViolation("MOBILE_PHONE");
-            }
+        if (result.phoneDetected) {
+          handleProctorViolation("MOBILE_PHONE");
         }
 
       } catch (err) {
-        // ignore occasional frame drop
-      }
-
-      if (active) {
-        requestRef.current = requestAnimationFrame(detectFrame);
+        // ignore occasional network error
       }
     };
 
@@ -109,42 +117,27 @@ export default function InterviewPage() {
         }
         setIsVideoActive(true);
 
-        // Dynamically import heavy ML models
-        await import('@tensorflow/tfjs');
-        await import('@tensorflow/tfjs-backend-webgl');
-        await import('@tensorflow/tfjs-backend-cpu');
-        const blazeface = await import('@tensorflow-models/blazeface');
-        const cocoSsd = await import('@tensorflow-models/coco-ssd');
-        
         const candidateEmail = user?.primaryEmailAddress?.emailAddress;
         const candidateName = user?.fullName || user?.firstName || (candidateEmail ? candidateEmail.split("@")[0] : "Candidate");
 
-        // Load the lightweight models concurrently with the API question fetch
-        const [blazefaceModel, cocoSsdModel, apiData] = await Promise.all([
-           blazeface.load(),
-           cocoSsd.load(),
-           !sessionId ? startInterviewAPI(candidateName, candidateEmail) : Promise.resolve(null)
-        ]);
-        
-        detectorRef.current = blazefaceModel;
-        cocoSsdRef.current = cocoSsdModel;
-        
-        if (apiData && !sessionId) {
-            setSessionId(apiData.sessionId);
-            addMessage({
-              id: "msg_first",
-              role: "assistant",
-              content: apiData.question,
-            });
+        if (!sessionId) {
+            const apiData = await startInterviewAPI(candidateName, candidateEmail);
+            if (apiData) {
+              setSessionId(apiData.sessionId);
+              addMessage({
+                id: "msg_first",
+                role: "assistant",
+                content: apiData.question,
+              });
+            }
         }
 
-        // Models loaded, UI can now start
         setIsCameraReady(true);
-
-        // Start ML loop
-        detectFrame();
+        
+        // Start polling analysis loop every 3 seconds
+        intervalId = setInterval(captureAndAnalyzeFrame, 3000);
       } catch (err) {
-        console.warn("Camera access denied or TFJS failed to load.", err);
+        console.warn("Camera access denied or failed to load.", err);
       }
     };
     
@@ -152,12 +145,12 @@ export default function InterviewPage() {
 
     return () => {
       active = false;
-      if (requestRef.current) cancelAnimationFrame(requestRef.current);
+      if (intervalId) clearInterval(intervalId);
       if (streamRef.current) {
         streamRef.current.getTracks().forEach(t => t.stop());
       }
     };
-  }, []);
+  }, [sessionId]);
 
   // Boot sequence loading texts
   useEffect(() => {

@@ -59,3 +59,7 @@ export const updateApplicationStatusAPI = async (sessionId: string, status: 'ACC
   return data.data;
 };
 
+export const sendProctoringFrameAPI = async (sessionId: string, base64Frame: string) => {
+  const { data } = await apiClient.post('/interview/proctor/frame', { sessionId, image: base64Frame });
+  return data.data;
+};
