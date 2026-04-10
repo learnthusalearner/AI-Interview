@@ -6,8 +6,8 @@ dotenv.config({ override: true });
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   PORT: z.string().default('3000'),
-  DATABASE_URL: z.string(),
-  OPENAI_API_KEY: z.string(),
+  DATABASE_URL: z.string().url('Invalid Database URL format'),
+  OPENAI_API_KEY: z.string().min(1, 'OpenAI API Key is required'),
   CORS_ORIGIN: z.string().default('*'),
 });
 
