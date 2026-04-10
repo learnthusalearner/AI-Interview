@@ -9,32 +9,35 @@ import { logger } from '../config/logger';
 class ProctoringServiceClass {
   private faceModel: blazeface.BlazeFaceModel | null = null;
   private objectModel: cocoSsd.ObjectDetection | null = null;
-  private isInitializing = false;
+  private initPromise: Promise<void> | null = null;
 
   constructor() {
     this.initP()
   }
 
   public async initP() {
-      if (this.isInitializing || (this.faceModel && this.objectModel)) return;
-      this.isInitializing = true;
-      try {
-        await tf.ready();
-        
-        logger.info("Initializing Proctoring Models (Blazeface & COCO-SSD)...");
-        const [fModel, oModel] = await Promise.all([
-          blazeface.load(),
-          cocoSsd.load()
-        ]);
-        
-        this.faceModel = fModel;
-        this.objectModel = oModel;
-        logger.info("Proctoring Models loaded successfully.");
-      } catch (e: any) {
-        logger.error(`Failed to load Proctoring Models: ${e.message}`);
-      } finally {
-        this.isInitializing = false;
-      }
+      if (this.initPromise) return this.initPromise;
+      if (this.faceModel && this.objectModel) return;
+
+      this.initPromise = (async () => {
+          try {
+            await tf.ready();
+            
+            logger.info("Initializing Proctoring Models (Blazeface & COCO-SSD)...");
+            const [fModel, oModel] = await Promise.all([
+              blazeface.load(),
+              cocoSsd.load()
+            ]);
+            
+            this.faceModel = fModel;
+            this.objectModel = oModel;
+            logger.info("Proctoring Models loaded successfully.");
+          } catch (e: any) {
+            logger.error(`Failed to load Proctoring Models: ${e.message}`);
+            this.initPromise = null;
+          }
+      })();
+      return this.initPromise;
   }
 
   public async analyzeFrame(base64Image: string): Promise<{ faceDetected: boolean; phoneDetected: boolean; error?: string }> {

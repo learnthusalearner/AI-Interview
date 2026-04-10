@@ -34,7 +34,20 @@ export default function AdminPage() {
     setIsLoading(true);
     try {
       const { data } = await axios.get(`${process.env.NEXT_PUBLIC_API_URL || ''}/admin/candidates`);
-      setCandidates(data.data || []);
+      
+      const candidatesList = data.data || [];
+      const counts: Record<string, number> = {};
+      
+      const enhancedList = [...candidatesList]
+        .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
+        .map(c => {
+           const key = c.candidateEmail || c.candidateName;
+           counts[key] = (counts[key] || 0) + 1;
+           return { ...c, attemptNumber: counts[key] };
+        })
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        
+      setCandidates(enhancedList);
     } catch (error) {
       toast.error("Failed to fetch candidates from server.");
     } finally {
@@ -170,10 +183,18 @@ export default function AdminPage() {
                       <td className="px-6 py-4">
                         <div className="text-sm font-semibold text-white flex items-center gap-2">
                           {c.candidateName} 
+                          {c.attemptNumber > 1 && (
+                            <span className="text-teal-400 font-mono text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 bg-teal-500/10 border border-teal-500/20 rounded ml-1">
+                              #{c.attemptNumber}
+                            </span>
+                          )}
                           {isFlagged && <span className="text-amber-500 text-xs font-bold px-1.5 py-0.5 bg-amber-500/10 border border-amber-500/20 rounded">⚠️ FLAGGED</span>}
                         </div>
-                        <div className="text-xs text-zinc-500 mt-1 flex items-center gap-1">
-                          <Mail className="w-3 h-3" /> {c.candidateEmail || "No Email"}
+                        <div className="text-xs text-zinc-500 mt-1 flex flex-col gap-1">
+                          <span className="flex items-center gap-1">
+                            <Mail className="w-3 h-3" /> {c.candidateEmail || "No Email"}
+                          </span>
+                          <span className="text-[10px] text-zinc-600 font-mono">ID: {c.id.split('-')[0]}</span>
                         </div>
                       </td>
                       <td className="px-6 py-5 text-center">
