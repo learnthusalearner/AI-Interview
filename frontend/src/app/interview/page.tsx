@@ -6,15 +6,34 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Mic, Square, Loader2, ArrowRight } from "lucide-react";
 import { useInterviewStore } from "@/lib/store";
 import { useAudioRecorder } from "@/hooks/useAudioRecorder";
-import { transcribeAudioAPI, respondInterviewAPI, evaluateInterviewAPI, submitFeedbackAPI } from "@/services/api";
+import { transcribeAudioAPI, respondInterviewAPI, evaluateInterviewAPI, submitFeedbackAPI, updateApplicationStatusAPI, startInterviewAPI } from "@/services/api";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { Copy, Check, MessageSquareHeart } from "lucide-react";
+import { Copy, Check, MessageSquareHeart, Camera, CameraOff, ScanFace } from "lucide-react";
+import { useUser } from "@clerk/nextjs";
 
 export default function InterviewPage() {
   const router = useRouter();
-  const { sessionId, messages, addMessage, setEvaluation } = useInterviewStore();
+  const { user } = useUser();
+  const { sessionId, setSessionId, messages, addMessage, setEvaluation } = useInterviewStore();
   const { isRecording, startRecording, stopRecording } = useAudioRecorder();
+  
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const isBootingRef = useRef(false);
+  const [isVideoActive, setIsVideoActive] = useState(false);
+  const [faceDetected, setFaceDetected] = useState(false);
+  const engagementStats = useRef({ totalFrames: 0, faceDetectedFrames: 0 });
+  const detectorRef = useRef<any>(null);
+  const cocoSsdRef = useRef<any>(null);
+  const requestRef = useRef<number>();
+  const proctorViolations = useRef(0);
+  
+  const cheatFlags = useRef<string[]>([]);
+  const lastToastTime = useRef<number>(0);
+  
+  const [isCameraReady, setIsCameraReady] = useState(false);
+  const [loadingText, setLoadingText] = useState("We are about to start...");
   
   const [isProcessing, setIsProcessing] = useState(false);
   const [isEvaluating, setIsEvaluating] = useState(false);
@@ -24,14 +43,145 @@ export default function InterviewPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!sessionId) {
-      router.replace("/");
-    }
-  }, [sessionId, router]);
+    // If we land here directly without user context, they probably refreshed.
+    // The initVideo hook will automatically handle this by starting a new session
+    // using their clerk hook context.
+  }, []);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  // Video Intelligence Init (True ML via Blazeface + Coco-SSD)
+  useEffect(() => {
+    let active = true;
+
+    const detectFrame = async () => {
+      if (!videoRef.current || !detectorRef.current || !active) return;
+      
+      try {
+        // 1. Blazeface face tracking
+        const predictions = await detectorRef.current.estimateFaces(videoRef.current, false);
+        engagementStats.current.totalFrames += 1;
+        if (predictions && predictions.length > 0) {
+          engagementStats.current.faceDetectedFrames += 1;
+          setFaceDetected(true);
+          proctorViolations.current = 0; // Reset absence counter
+        } else {
+          setFaceDetected(false);
+          proctorViolations.current += 1;
+          // ~5-7 seconds of absence
+          // ~3 seconds of absence (assuming ~30fps)
+          if (proctorViolations.current > 90) {
+            handleProctorViolation("ABSENT_USER");
+            proctorViolations.current = 0; // Reset after flag
+          }
+        }
+
+        // 2. COCO-SSD Object Detection (pulsed every 20 frames to save CPU)
+        if (engagementStats.current.totalFrames % 20 === 0 && cocoSsdRef.current && active) {
+            const objects = await cocoSsdRef.current.detect(videoRef.current);
+            const hasPhone = objects.some((obj: any) => obj.class === "cell phone");
+            if (hasPhone) {
+               handleProctorViolation("MOBILE_PHONE");
+            }
+        }
+
+      } catch (err) {
+        // ignore occasional frame drop
+      }
+
+      if (active) {
+        requestRef.current = requestAnimationFrame(detectFrame);
+      }
+    };
+
+    const initVideo = async () => {
+      if (isBootingRef.current) return;
+      isBootingRef.current = true;
+
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        streamRef.current = stream;
+        if (videoRef.current) {
+           videoRef.current.srcObject = stream;
+           videoRef.current.play().catch(e => console.warn(e));
+        }
+        setIsVideoActive(true);
+
+        // Dynamically import heavy ML models
+        await import('@tensorflow/tfjs');
+        await import('@tensorflow/tfjs-backend-webgl');
+        await import('@tensorflow/tfjs-backend-cpu');
+        const blazeface = await import('@tensorflow-models/blazeface');
+        const cocoSsd = await import('@tensorflow-models/coco-ssd');
+        
+        const candidateEmail = user?.primaryEmailAddress?.emailAddress;
+        const candidateName = user?.fullName || user?.firstName || (candidateEmail ? candidateEmail.split("@")[0] : "Candidate");
+
+        // Load the lightweight models concurrently with the API question fetch
+        const [blazefaceModel, cocoSsdModel, apiData] = await Promise.all([
+           blazeface.load(),
+           cocoSsd.load(),
+           !sessionId ? startInterviewAPI(candidateName, candidateEmail) : Promise.resolve(null)
+        ]);
+        
+        detectorRef.current = blazefaceModel;
+        cocoSsdRef.current = cocoSsdModel;
+        
+        if (apiData && !sessionId) {
+            setSessionId(apiData.sessionId);
+            addMessage({
+              id: "msg_first",
+              role: "assistant",
+              content: apiData.question,
+            });
+        }
+
+        // Models loaded, UI can now start
+        setIsCameraReady(true);
+
+        // Start ML loop
+        detectFrame();
+      } catch (err) {
+        console.warn("Camera access denied or TFJS failed to load.", err);
+      }
+    };
+    
+    initVideo();
+
+    return () => {
+      active = false;
+      if (requestRef.current) cancelAnimationFrame(requestRef.current);
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(t => t.stop());
+      }
+    };
+  }, []);
+
+  // Boot sequence loading texts
+  useEffect(() => {
+     if (isCameraReady) return;
+     const texts = ["We are about to start...", "Initializing secure camera...", "Just a few more seconds...", "Loading AI algorithms..."];
+     let idx = 0;
+     const interval = setInterval(() => {
+        idx = (idx + 1) % texts.length;
+        setLoadingText(texts[idx]);
+     }, 2500);
+     return () => clearInterval(interval);
+  }, [isCameraReady]);
+
+  const handleProctorViolation = (reason: string) => {
+     const now = Date.now();
+     // Prevent toast spam (1 per 10 seconds)
+     if (now - lastToastTime.current > 10000) {
+        lastToastTime.current = now;
+        cheatFlags.current.push(reason);
+        toast.error("SECURITY WARNING", {
+          description: reason === "MOBILE_PHONE" ? "Unauthorized device detected. Please put your phone away." : "Please ensure your face is clearly visible in the camera."
+        });
+     }
+  };
 
   const handleRecordToggle = async () => {
     if (isRecording) {
@@ -89,9 +239,14 @@ export default function InterviewPage() {
 
   const handleFinish = async () => {
     setIsEvaluating(true);
+    let score = 0;
+    if (engagementStats.current.totalFrames > 0) {
+       score = Math.round((engagementStats.current.faceDetectedFrames / engagementStats.current.totalFrames) * 10);
+    }
+    
     try {
-      const evalData = await evaluateInterviewAPI(sessionId!);
-      setEvaluation(evalData);
+      const evaluationResult = await evaluateInterviewAPI(sessionId!, Math.max(1, score), cheatFlags.current);
+      setEvaluation(evaluationResult);
       setShowFeedbackModal(true);
     } catch (error: any) {
       console.error("Evaluation failed", error);
@@ -122,10 +277,50 @@ export default function InterviewPage() {
       router.push("/dashboard");
   };
 
-  if (!sessionId) return null; // Wait for redirect if hit directly
-
   return (
     <div className="flex flex-col h-screen bg-black overflow-hidden relative">
+      
+      {/* Session Failure Overlay */}
+      {isCameraReady && !sessionId && (
+       <div className="absolute inset-0 z-[100] flex flex-col bg-black items-center justify-center p-6 text-center">
+          <p className="text-rose-500 font-medium text-xl">Failed to secure an encrypted session key.</p>
+          <p className="text-zinc-500 text-sm mt-2">The OpenAI back-end might be unreachable or timed out.</p>
+          <Button onClick={() => router.push('/')} className="mt-6 bg-zinc-800 text-white">Return to Secure Hub</Button>
+       </div>
+      )}
+
+      {/* Boot Sequencer Loading Screen */}
+      <AnimatePresence>
+        {!isCameraReady && (
+           <motion.div 
+             exit={{ opacity: 0, scale: 1.05 }}
+             transition={{ duration: 0.6, ease: "easeInOut" }}
+             className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black"
+           >
+              <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-zinc-900 via-black to-black pointer-events-none" />
+              <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="z-10 flex flex-col items-center max-w-sm text-center"
+              >
+                 <div className="w-16 h-16 bg-zinc-900 border border-zinc-800 rounded-2xl flex items-center justify-center mb-6 shadow-[0_0_30px_rgba(34,211,238,0.1)]">
+                    <ScanFace className="w-8 h-8 text-cyan-500 animate-pulse" />
+                 </div>
+                 <motion.p 
+                    key={loadingText}
+                    initial={{ opacity: 0, y: 5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -5 }}
+                    className="text-white font-medium tracking-wider"
+                 >
+                    {loadingText}
+                 </motion.p>
+                 <p className="text-zinc-500 text-sm mt-3 animate-pulse">Initializing TFJS weights & WebGL engine</p>
+              </motion.div>
+           </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Premium Dark Space Background */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-violet-900/10 via-black to-black pointer-events-none" />
       <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-cyan-900/20 blur-[150px] rounded-full pointer-events-none" />
@@ -146,6 +341,38 @@ export default function InterviewPage() {
           {isEvaluating ? <Loader2 className="w-4 h-4 animate-spin" /> : "Conclude Session"}
         </Button>
       </header>
+
+      {/* Video Intelligence Feed (Draggable/Floating or Fixed Corner) */}
+      <div className="absolute top-24 right-6 w-48 h-64 rounded-xl overflow-hidden bg-zinc-900 border border-white/10 shadow-2xl z-20 hidden md:block">
+        <div className="absolute top-2 left-2 z-30 flex items-center gap-1.5 bg-black/60 backdrop-blur-md px-2 py-1 rounded-md">
+           <ScanFace className={`w-3 h-3 ${faceDetected ? 'text-emerald-400' : 'text-zinc-500'}`} />
+           <span className="text-[10px] uppercase font-bold tracking-wider text-zinc-300">
+             {faceDetected ? 'Engaged' : 'Scanning'}
+           </span>
+        </div>
+        {!isVideoActive && (
+          <div className="w-full h-full flex flex-col items-center justify-center gap-2 text-zinc-500">
+             <CameraOff className="w-6 h-6" />
+             <span className="text-xs uppercase">No Signal</span>
+          </div>
+        )}
+        <video 
+           ref={videoRef} 
+           autoPlay 
+           playsInline 
+           muted 
+           className={`w-full h-full object-cover transition-opacity duration-1000 ${isVideoActive ? 'opacity-100' : 'opacity-0'} ${!faceDetected && isVideoActive ? 'grayscale' : ''}`}
+        />
+        {/* Mock Face Bounding Box Scanner */}
+        {isVideoActive && faceDetected && (
+          <div className="absolute inset-8 border border-emerald-500/30 rounded flex items-center justify-center pointer-events-none">
+             <div className="absolute top-0 left-0 w-2 h-2 border-t-2 border-l-2 border-emerald-400" />
+             <div className="absolute top-0 right-0 w-2 h-2 border-t-2 border-r-2 border-emerald-400" />
+             <div className="absolute bottom-0 left-0 w-2 h-2 border-b-2 border-l-2 border-emerald-400" />
+             <div className="absolute bottom-0 right-0 w-2 h-2 border-b-2 border-r-2 border-emerald-400" />
+          </div>
+        )}
+      </div>
 
       {/* Chat Area */}
       <main className="flex-1 overflow-y-auto px-4 py-8 md:px-0 scroll-smooth z-10 w-full max-w-3xl mx-auto space-y-6">

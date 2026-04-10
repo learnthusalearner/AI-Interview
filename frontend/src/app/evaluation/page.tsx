@@ -33,6 +33,7 @@ export default function EvaluationPage() {
     { label: "Patience", data: evaluation.patience },
     { label: "Simplicity", data: evaluation.simplicity },
     { label: "Fluency", data: evaluation.fluency },
+    { label: "Engagement", data: evaluation.engagement },
   ];
 
   const handleRestart = () => {
@@ -61,7 +62,7 @@ export default function EvaluationPage() {
               Candidate: <span className="text-white font-medium">{candidateName}</span>
             </p>
           </div>
-          <div className="flex items-center gap-3">
+           <div className="flex flex-col items-end gap-2">
              <div className={`px-4 py-2 rounded-full border text-sm font-bold tracking-wider ${
                evaluation.overallRecommendation === "PASS" 
                 ? "bg-teal-500/10 border-teal-500/50 text-teal-400" 
@@ -69,6 +70,11 @@ export default function EvaluationPage() {
              }`}>
                {evaluation.overallRecommendation}
              </div>
+             {evaluation.teachingStyle && (
+               <div className="text-xs uppercase font-semibold text-violet-400 bg-violet-500/10 border border-violet-500/20 px-3 py-1 rounded-full">
+                 Style: {evaluation.teachingStyle}
+               </div>
+             )}
           </div>
         </div>
 
@@ -127,6 +133,40 @@ export default function EvaluationPage() {
                 </CardContent>
               </Card>
             </motion.div>
+
+            {evaluation.keyHighlights && evaluation.keyHighlights.length > 0 && (
+              <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.7 }}>
+                <Card className="bg-teal-900/20 border-teal-500/30 backdrop-blur-sm">
+                  <CardHeader className="py-4">
+                    <CardTitle className="text-teal-400 text-sm flex items-center gap-2 uppercase tracking-wider">
+                      ✨ Highlights
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-2 pb-4">
+                    {evaluation.keyHighlights.map((hl: string, i: number) => (
+                      <p key={i} className="text-sm text-teal-200/80">• {hl}</p>
+                    ))}
+                  </CardContent>
+                </Card>
+              </motion.div>
+            )}
+
+            {evaluation.riskFlags && evaluation.riskFlags.length > 0 && evaluation.riskFlags[0] !== "none" && (
+              <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.8 }}>
+                <Card className="bg-rose-900/20 border-rose-500/30 backdrop-blur-sm">
+                  <CardHeader className="py-4">
+                    <CardTitle className="text-rose-400 text-sm flex items-center gap-2 uppercase tracking-wider">
+                      ⚠️ Risk Flags
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-2 pb-4">
+                    {evaluation.riskFlags.map((flag: string, i: number) => (
+                       <span key={i} className="inline-block mr-2 mb-2 px-2 py-1 bg-rose-500/10 border border-rose-500/20 rounded text-rose-300 text-xs">{flag}</span>
+                    ))}
+                  </CardContent>
+                </Card>
+              </motion.div>
+            )}
 
             <Button 
                onClick={handleRestart}

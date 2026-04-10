@@ -12,8 +12,18 @@ export interface EvaluationResult {
   patience: { score: number; reasoning: string };
   simplicity: { score: number; reasoning: string };
   fluency: { score: number; reasoning: string };
+  engagement: { score: number; reasoning: string };
   overallRecommendation: string;
   evidenceQuotes: string[];
+  teachingStyle?: string;
+  riskFlags?: string[];
+  keyHighlights?: string[];
+  consistencyAnalysis?: string;
+  communicationStyleAnalysis?: {
+    structure: string;
+    examplesUsed: boolean;
+    stepByStep: boolean;
+  };
 }
 
 interface InterviewState {

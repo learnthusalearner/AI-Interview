@@ -31,21 +31,10 @@ export default function LandingPage() {
     setIsStarting(true);
     try {
       setCandidateName(candidateName);
-      const data = await startInterviewAPI(candidateName, candidateEmail);
       
-      setSessionId(data.sessionId);
-      addMessage({
-        id: "msg_first",
-        role: "assistant",
-        content: data.question,
-      });
-
+      // We will initialize the API and the camera simultaneously on the next page
       router.push("/interview");
     } catch (error: any) {
-      console.error("Failed to start session", error);
-      toast.error("Network Error", { 
-        description: "Could not connect to the interview server. Please check your connection or backend configuration." 
-      });
       setIsStarting(false);
     }
   };

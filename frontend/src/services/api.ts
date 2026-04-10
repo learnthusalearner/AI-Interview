@@ -28,8 +28,8 @@ export const respondInterviewAPI = async (sessionId: string, text: string) => {
   return data.data; // expects { reply }
 };
 
-export const evaluateInterviewAPI = async (sessionId: string) => {
-  const { data } = await apiClient.post('/interview/evaluate', { sessionId });
+export const evaluateInterviewAPI = async (sessionId: string, videoEngagementScore?: number, cheatFlags?: string[]) => {
+  const { data } = await apiClient.post('/interview/evaluate', { sessionId, videoEngagementScore, cheatFlags });
   return data.data; 
 };
 
@@ -54,8 +54,8 @@ export const getCandidateSessionsAPI = async (email: string) => {
   return data.data;
 };
 
-export const updateApplicationStatusAPI = async (sessionId: string, status: 'ACCEPTED' | 'REJECTED') => {
-  const { data } = await apiClient.post('/admin/status', { sessionId, status });
+export const updateApplicationStatusAPI = async (sessionId: string, status: 'ACCEPTED' | 'REJECTED', feedbackReason?: string) => {
+  const { data } = await apiClient.post('/admin/status', { sessionId, status, feedbackReason });
   return data.data;
 };
 

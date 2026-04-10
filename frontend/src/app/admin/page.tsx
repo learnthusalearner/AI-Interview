@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Shield, ArrowLeft, Trophy, Search, Check, X, Mail, MessageSquare } from "lucide-react";
+import { Shield, ArrowLeft, Trophy, Search, Check, X, Mail, MessageSquare, Skull } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
@@ -140,6 +140,7 @@ export default function AdminPage() {
               <thead className="bg-zinc-950/50 text-zinc-400 text-xs uppercase tracking-widest border-b border-white/5">
                 <tr>
                   <th className="px-6 py-5 font-semibold">Candidate Profile</th>
+                  <th className="px-6 py-5 font-semibold text-center">Misconduct</th>
                   <th className="px-6 py-5 font-semibold">Analytics: Strong Points</th>
                   <th className="px-6 py-5 font-semibold">Analytics: Weak Points</th>
                   <th className="px-6 py-5 font-semibold text-center">AI Total Score</th>
@@ -150,39 +151,52 @@ export default function AdminPage() {
               <tbody className="divide-y divide-zinc-800/60">
                 {candidates.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="px-6 py-12 text-center text-zinc-500">
+                    <td colSpan={7} className="px-6 py-12 text-center text-zinc-500">
                       Archive is empty. No completed evaluations.
                     </td>
                   </tr>
                 )}
                 {candidates.map((c, idx) => {
                   const analytics = getAnalytics(c.evaluationData);
+                  const isFlagged = c.evaluationData?.overallRecommendation === 'FLAGGED';
                   return (
                     <motion.tr 
                       key={c.id}
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       transition={{ delay: idx * 0.05 }}
-                      className="hover:bg-zinc-800/30 transition-colors"
+                      className={isFlagged ? "bg-amber-950/20 hover:bg-amber-950/30 border-l-2 border-amber-500 transition-colors relative" : "hover:bg-zinc-800/30 transition-colors"}
                     >
                       <td className="px-6 py-4">
-                        <div className="text-sm font-semibold text-white">{c.candidateName}</div>
+                        <div className="text-sm font-semibold text-white flex items-center gap-2">
+                          {c.candidateName} 
+                          {isFlagged && <span className="text-amber-500 text-xs font-bold px-1.5 py-0.5 bg-amber-500/10 border border-amber-500/20 rounded">⚠️ FLAGGED</span>}
+                        </div>
                         <div className="text-xs text-zinc-500 mt-1 flex items-center gap-1">
                           <Mail className="w-3 h-3" /> {c.candidateEmail || "No Email"}
                         </div>
                       </td>
+                      <td className="px-6 py-5 text-center">
+                         {c.cheatCount > 0 ? (
+                            <span className="text-amber-500 font-bold bg-amber-500/10 px-3 py-1 rounded-full border border-amber-500/20 shadow-[0_0_10px_rgba(245,158,11,0.1)]">{c.cheatCount}</span>
+                         ) : (
+                            <span className="text-emerald-500/50 font-medium bg-emerald-500/5 px-3 py-1 rounded-full border border-emerald-500/10">0</span>
+                         )}
+                      </td>
                       <td className="px-6 py-5 text-cyan-400 font-medium capitalize">{analytics.strong}</td>
                       <td className="px-6 py-5 text-rose-400 font-medium capitalize">{analytics.weak}</td>
                       <td className="px-6 py-5 text-center">
-                        <span className="bg-violet-500/10 border border-violet-500/20 text-violet-300 px-3 py-1 rounded-full font-mono shadow-[0_0_10px_rgba(139,92,246,0.1)]">
-                           {c.totalScore}/50
-                        </span>
+                         <span className="bg-violet-500/10 border border-violet-500/20 text-violet-300 px-3 py-1 rounded-full font-mono shadow-[0_0_10px_rgba(139,92,246,0.1)]">
+                           {c.totalScore}/60
+                         </span>
                       </td>
                       <td className="px-6 py-5 text-center">
                          {c.applicationStatus === 'PENDING' ? (
                            <span className="text-yellow-400 bg-yellow-400/10 border border-yellow-400/20 px-2 py-1 rounded text-xs font-semibold uppercase tracking-wider">PENDING</span>
                          ) : c.applicationStatus === 'ACCEPTED' ? (
                            <span className="text-cyan-400 bg-cyan-400/10 border border-cyan-400/20 px-2 py-1 rounded text-xs font-semibold uppercase tracking-wider">SELECTED</span>
+                         ) : isFlagged ? (
+                           <span className="text-amber-500 bg-black border border-amber-500/50 px-2 py-1 rounded text-[10px] font-bold uppercase tracking-[0.2em] shadow-[0_0_10px_rgba(245,158,11,0.2)]">FLAGGED</span>
                          ) : (
                            <span className="text-rose-400 bg-rose-400/10 border border-rose-400/20 px-2 py-1 rounded text-xs font-semibold uppercase tracking-wider">REJECTED</span>
                          )}
@@ -218,17 +232,18 @@ export default function AdminPage() {
                 initial={{ scale: 0.95, opacity: 0, y: 20 }}
                 animate={{ scale: 1, opacity: 1, y: 0 }}
                 exit={{ scale: 0.95, opacity: 0, y: 20 }}
-                className="bg-zinc-950 border border-zinc-800 w-full max-w-6xl h-[85vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden relative"
+                className={selectedCandidate.evaluationData?.overallRecommendation === 'FLAGGED' ? "bg-black border border-amber-900 w-full max-w-6xl h-[85vh] rounded-2xl shadow-[0_0_50px_rgba(245,158,11,0.1)] flex flex-col overflow-hidden relative" : "bg-zinc-950 border border-zinc-800 w-full max-w-6xl h-[85vh] rounded-2xl shadow-2xl flex flex-col overflow-hidden relative"}
               >
                 {/* Modal Header */}
-                <div className="flex justify-between items-center p-6 border-b border-zinc-800 bg-zinc-900/50">
+                <div className={selectedCandidate.evaluationData?.overallRecommendation === 'FLAGGED' ? "flex justify-between items-center p-6 border-b border-amber-900 bg-amber-950/10" : "flex justify-between items-center p-6 border-b border-zinc-800 bg-zinc-900/50"}>
                   <div>
-                    <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+                    <h2 className={selectedCandidate.evaluationData?.overallRecommendation === 'FLAGGED' ? "text-2xl font-bold text-amber-500 flex items-center gap-2" : "text-2xl font-bold text-white flex items-center gap-2"}>
                        {selectedCandidate.candidateName} <span className="text-zinc-500 text-sm font-normal">({selectedCandidate.candidateEmail || 'No Email'})</span>
+                       {selectedCandidate.evaluationData?.overallRecommendation === 'FLAGGED' && <span className="text-sm border border-amber-500/30 px-2 py-0.5 rounded text-amber-500 bg-amber-500/10 ml-2">⚠️ PROCTOR WARNING</span>}
                     </h2>
                     <div className="flex gap-4 mt-2">
-                      <span className="text-sm px-2 py-1 bg-zinc-800 text-teal-400 rounded-md font-mono">
-                        AI Score: {selectedCandidate.totalScore}/50
+                      <span className={selectedCandidate.evaluationData?.overallRecommendation === 'FLAGGED' ? "text-sm px-2 py-1 bg-zinc-800 text-amber-500 rounded-md font-mono line-through" : "text-sm px-2 py-1 bg-zinc-800 text-teal-400 rounded-md font-mono"}>
+                        AI Score: {selectedCandidate.totalScore}/60
                       </span>
                       <span className="text-sm px-2 py-1 bg-zinc-800 text-zinc-400 rounded-md font-mono">
                         Status: {selectedCandidate.applicationStatus}
@@ -274,14 +289,15 @@ export default function AdminPage() {
                              { label: 'Simplicity', val: selectedCandidate.evaluationData?.simplicity?.score || 0, color: '#3b82f6', dark: '#2563eb', top: '#93c5fd' },
                              { label: 'Patience', val: selectedCandidate.evaluationData?.patience?.score || 0, color: '#8b5cf6', dark: '#7c3aed', top: '#c4b5fd' },
                              { label: 'Warmth', val: selectedCandidate.evaluationData?.warmth?.score || 0, color: '#ec4899', dark: '#db2777', top: '#f9a8d4' },
-                             { label: 'Fluency', val: selectedCandidate.evaluationData?.fluency?.score || 0, color: '#10b981', dark: '#059669', top: '#6ee7b7' }
+                             { label: 'Fluency', val: selectedCandidate.evaluationData?.fluency?.score || 0, color: '#10b981', dark: '#059669', top: '#6ee7b7' },
+                             { label: 'Engagement', val: selectedCandidate.evaluationData?.engagement?.score || 0, color: '#f59e0b', dark: '#d97706', top: '#fcd34d' }
                            ].map((m, i) => (
                              <motion.div 
                                key={m.label}
                                initial={{ height: 0 }}
                                animate={{ height: `${Math.max(m.val * 10, 5)}%` }}
                                transition={{ delay: 0.2 + (i * 0.1), duration: 1, type: 'spring' }}
-                               className="w-12 relative [transform-style:preserve-3d] group hover:z-50 transition-all font-mono"
+                               className="w-10 sm:w-12 relative [transform-style:preserve-3d] group hover:z-50 transition-all font-mono"
                              >
                                {/* Tooltip Overlay (Hidden usually) */}
                                <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-black/90 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity [transform:rotateZ(45deg)_rotateX(-60deg)_translateY(-20px)] whitespace-nowrap z-50 shadow-xl border border-zinc-700 pointer-events-none">
@@ -309,12 +325,83 @@ export default function AdminPage() {
                         </div>
                       </div>
 
-                      {/* AI Reasoning Summary */}
-                      <div className="mt-8 bg-zinc-900/60 p-5 rounded-xl border border-zinc-800 text-sm text-zinc-300">
-                         <h4 className="font-medium text-white mb-2">Evaluator Notes:</h4>
-                         <p className="italic text-zinc-400 select-text leading-relaxed">
-                           "The candidate scored well structurally. Recommendation: <span className="text-teal-400 not-italic uppercase font-semibold">{selectedCandidate.overallRecommendation || 'N/A'}</span>. Their highest trait was observed in warmth and patience."
-                         </p>
+                      {/* Deep AI Reasoning Summary & Analytics */}
+                      <div className="mt-8 bg-zinc-900/60 p-5 rounded-xl border border-zinc-800 text-sm text-zinc-300 overflow-y-auto max-h-[300px] space-y-4">
+                         
+                         <div>
+                           <h4 className="font-medium text-white mb-2 flex items-center gap-2">
+                             Evaluator Recommendation: 
+                             <span className={`px-2 py-0.5 rounded text-xs font-bold ${selectedCandidate.overallRecommendation === 'PASS' ? 'bg-teal-500/20 text-teal-400' : 'bg-rose-500/20 text-rose-400'}`}>
+                               {selectedCandidate.overallRecommendation || 'N/A'}
+                             </span>
+                             {selectedCandidate.evaluationData?.teachingStyle && (
+                               <span className="px-2 py-0.5 rounded text-xs font-bold bg-violet-500/20 text-violet-400 ml-auto capitalize border border-violet-500/30">
+                                 Style: {selectedCandidate.evaluationData.teachingStyle}
+                               </span>
+                             )}
+                           </h4>
+                         </div>
+
+                         {selectedCandidate.evaluationData?.proctoringSummary && (selectedCandidate.evaluationData.proctoringSummary.mobilePhoneCount > 0 || selectedCandidate.evaluationData.proctoringSummary.absenceCount > 0) && (
+                           <div className="bg-amber-950/30 border border-amber-900/50 rounded-lg p-3">
+                             <h5 className="text-amber-500 font-semibold mb-1 text-xs uppercase tracking-wider flex items-center gap-1"><Skull className="w-3 h-3" /> Proctoring Violations (Cheating Attempts)</h5>
+                             <ul className="list-disc pl-4 space-y-1">
+                               {selectedCandidate.evaluationData.proctoringSummary.mobilePhoneCount > 0 && (
+                                 <li className="text-amber-200/80 text-xs font-bold">Unauthorized Device / Smartphone Caught: <span className="text-rose-400">{selectedCandidate.evaluationData.proctoringSummary.mobilePhoneCount} time(s)</span></li>
+                               )}
+                               {selectedCandidate.evaluationData.proctoringSummary.absenceCount > 0 && (
+                                 <li className="text-amber-200/80 text-xs font-bold">Candidate Walked Away / Not Visible: <span className="text-rose-400">{selectedCandidate.evaluationData.proctoringSummary.absenceCount} time(s)</span></li>
+                               )}
+                             </ul>
+                           </div>
+                         )}
+
+                         {selectedCandidate.evaluationData?.riskFlags && selectedCandidate.evaluationData.riskFlags.length > 0 && selectedCandidate.evaluationData.riskFlags[0] !== "none" && (
+                           <div className="bg-rose-950/30 border border-rose-900/50 rounded-lg p-3">
+                             <h5 className="text-rose-400 font-semibold mb-1 text-xs uppercase tracking-wider">Risk Flags Detected</h5>
+                             <div className="flex flex-wrap gap-2">
+                               {selectedCandidate.evaluationData.riskFlags.map((flag: string, i: number) => (
+                                 <span key={i} className="px-2 py-1 bg-rose-500/10 border border-rose-500/20 rounded text-rose-300 text-xs">⚠️ {flag}</span>
+                               ))}
+                             </div>
+                           </div>
+                         )}
+
+                         {selectedCandidate.evaluationData?.keyHighlights && selectedCandidate.evaluationData.keyHighlights.length > 0 && (
+                           <div className="bg-teal-950/30 border border-teal-900/50 rounded-lg p-3">
+                             <h5 className="text-teal-400 font-semibold mb-1 text-xs uppercase tracking-wider">Key Highlights</h5>
+                             <ul className="list-disc pl-4 space-y-1">
+                               {selectedCandidate.evaluationData.keyHighlights.map((hl: string, i: number) => (
+                                 <li key={i} className="text-teal-200/80 text-xs">{hl}</li>
+                               ))}
+                             </ul>
+                           </div>
+                         )}
+
+                         {selectedCandidate.evaluationData?.communicationStyleAnalysis && (
+                           <div className="bg-zinc-800/40 rounded-lg p-3 space-y-2">
+                             <h5 className="text-zinc-400 font-semibold text-xs uppercase tracking-wider">Communication DNA</h5>
+                             <p className="text-zinc-300 text-xs"><span className="font-medium text-white">Structure:</span> {selectedCandidate.evaluationData.communicationStyleAnalysis.structure}</p>
+                             <div className="flex gap-4 text-xs font-mono">
+                               <span className={selectedCandidate.evaluationData.communicationStyleAnalysis.examplesUsed ? "text-emerald-400" : "text-rose-400"}>
+                                 {selectedCandidate.evaluationData.communicationStyleAnalysis.examplesUsed ? "✓ Uses Examples" : "✗ No Examples"}
+                               </span>
+                               <span className={selectedCandidate.evaluationData.communicationStyleAnalysis.stepByStep ? "text-emerald-400" : "text-rose-400"}>
+                                 {selectedCandidate.evaluationData.communicationStyleAnalysis.stepByStep ? "✓ Step-by-Step" : "✗ Lacks Step-by-Step"}
+                               </span>
+                             </div>
+                           </div>
+                         )}
+
+                         {selectedCandidate.evaluationData?.consistencyAnalysis && (
+                           <div>
+                             <h5 className="text-zinc-500 font-semibold mb-1 text-xs uppercase tracking-wider">Consistency Analysis</h5>
+                             <p className="italic text-zinc-400 select-text leading-relaxed text-xs">
+                               "{selectedCandidate.evaluationData.consistencyAnalysis}"
+                             </p>
+                           </div>
+                         )}
+
                       </div>
                    </div>
 
