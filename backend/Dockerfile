@@ -10,6 +10,7 @@ COPY prisma ./prisma/
 
 # Install all dependencies (including devDependencies for TypeScript)
 RUN npm install
+RUN npx prisma generate
 
 # Copy the rest of the application code
 COPY . .
@@ -24,7 +25,7 @@ WORKDIR /app
 
 # Set Node to production mode
 ENV NODE_ENV=production
-ENV PORT=3000
+ENV PORT=5000
 
 # Copy package files
 COPY package*.json ./
@@ -40,7 +41,7 @@ COPY --from=builder /app/dist ./dist
 RUN npx prisma generate
 
 # Expose the correct port
-EXPOSE 3000
+EXPOSE 5000
 
 # Start the application using the start command defined in package.json
 CMD ["npm", "run", "start"]
