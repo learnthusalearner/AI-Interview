@@ -61,14 +61,10 @@ export default function InterviewPage() {
     let intervalId: NodeJS.Timeout;
 
     // hidden canvas to capture frame
-    if (!canvasRef.current) {
-        canvasRef.current = document.createElement("canvas");
-    }
-
     const captureAndAnalyzeFrame = async () => {
       const currentSessionId = sessionIdRef.current;
       if (!videoRef.current || !active || !currentSessionId) return;
-      
+
       const video = videoRef.current;
       if (video.readyState !== video.HAVE_ENOUGH_DATA) return;
 
@@ -90,12 +86,12 @@ export default function InterviewPage() {
         if (result.faceDetected) {
           engagementStats.current.faceDetectedFrames += 1;
           setFaceDetected(true);
-          proctorViolations.current = 0; // Reset absence counter
+          proctorViolations.current = 0; 
         } else {
           setFaceDetected(false);
           proctorViolations.current += 1;
-          // ~3-4 frames absence (~9-12 seconds since we poll every 3s)
-          if (proctorViolations.current > 3) {
+          // ~2 frames absence (~10 seconds total since we poll every ~5s)
+          if (proctorViolations.current > 1) {
             handleProctorViolation("ABSENT_USER");
             proctorViolations.current = 0; 
           }
@@ -104,10 +100,23 @@ export default function InterviewPage() {
         if (result.phoneDetected) {
           handleProctorViolation("MOBILE_PHONE");
         }
-
       } catch (err) {
         // ignore occasional network error
       }
+    };
+
+    const runPollLoop = async () => {
+        if (!active) return;
+        
+        // Wait a few seconds initially to let things boot
+        if (isCameraReady) {
+            await captureAndAnalyzeFrame();
+        }
+        
+        // Use timeout rather than interval to prevent concurrent request pileups, 5s delay
+        if (active) {
+            intervalId = setTimeout(runPollLoop, 5000);
+        }
     };
 
     const initVideo = async () => {
@@ -139,9 +148,7 @@ export default function InterviewPage() {
         }
 
         setIsCameraReady(true);
-        
-        // Start polling analysis loop every 3 seconds
-        intervalId = setInterval(captureAndAnalyzeFrame, 3000);
+        intervalId = setTimeout(runPollLoop, 3000);
       } catch (err) {
         console.warn("Camera access denied or failed to load.", err);
       }
@@ -151,7 +158,7 @@ export default function InterviewPage() {
 
     return () => {
       active = false;
-      if (intervalId) clearInterval(intervalId);
+      if (intervalId) clearTimeout(intervalId);
       if (streamRef.current) {
         streamRef.current.getTracks().forEach(t => t.stop());
       }
@@ -334,7 +341,7 @@ export default function InterviewPage() {
           variant="outline" 
           size="sm" 
           onClick={handleFinish}
-          disabled={isProcessing || isRecording || isEvaluating}
+          disabled={isProcessing || isRecording || isEvaluating || !sessionId}
           className="border-white/10 text-zinc-300 hover:bg-white/5 hover:text-white backdrop-blur-md transition-all rounded-full px-6"
         >
           {isEvaluating ? <Loader2 className="w-4 h-4 animate-spin" /> : "Conclude Session"}
