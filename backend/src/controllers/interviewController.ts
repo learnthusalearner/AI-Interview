@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { InterviewService } from '../services/InterviewService';
+import { ProctoringService } from '../services/ProctoringService';
 
 export class InterviewController {
   static async start(req: Request, res: Response) {
@@ -46,6 +47,16 @@ export class InterviewController {
     try {
       const { email } = req.params;
       const result = await InterviewService.getSessionsByEmail(email as string);
+      res.status(200).json({ success: true, data: result });
+    } catch (error: any) {
+      res.status(500).json({ success: false, message: error.message });
+    }
+  }
+
+  static async proctorFrame(req: Request, res: Response) {
+    try {
+      const { sessionId, image } = req.body;
+      const result = await ProctoringService.analyzeFrame(image);
       res.status(200).json({ success: true, data: result });
     } catch (error: any) {
       res.status(500).json({ success: false, message: error.message });

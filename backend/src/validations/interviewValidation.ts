@@ -26,3 +26,10 @@ export const submitFeedbackSchema = z.object({
     feedback: z.string().min(1, 'Feedback text cannot be empty'),
   }),
 });
+
+export const proctorFrameSchema = z.object({
+  body: z.object({
+    sessionId: z.string().uuid('Invalid Session ID'),
+    image: z.string().min(10, 'Invalid image data'), // base64 image
+  }),
+});
