@@ -124,6 +124,29 @@ export default function InterviewPage() {
       if (isBootingRef.current) return;
       isBootingRef.current = true;
 
+      // Run session init in parallel and handle errors separately without breaking camera
+      (async () => {
+        const candidateEmail = user?.primaryEmailAddress?.emailAddress;
+        const candidateName = user?.fullName || user?.firstName || (candidateEmail ? candidateEmail.split("@")[0] : "Candidate");
+
+        if (!sessionId) {
+            try {
+                const apiData = await startInterviewAPI(candidateName, candidateEmail);
+                if (apiData) {
+                  setSessionId(apiData.sessionId);
+                  addMessage({
+                    id: "msg_first",
+                    role: "assistant",
+                    content: apiData.question,
+                  });
+                }
+            } catch (sessionErr) {
+                console.error("Failed to start session:", sessionErr);
+                setSessionFailed(true);
+            }
+        }
+      })();
+
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
         streamRef.current = stream;
@@ -132,34 +155,14 @@ export default function InterviewPage() {
            videoRef.current.play().catch(e => console.warn(e));
         }
         setIsVideoActive(true);
-        setIsCameraReady(true);
-        intervalId = setTimeout(runPollLoop, 3000);
-
-        // Run session init in parallel and handle errors separately without breaking camera
-        (async () => {
-          const candidateEmail = user?.primaryEmailAddress?.emailAddress;
-          const candidateName = user?.fullName || user?.firstName || (candidateEmail ? candidateEmail.split("@")[0] : "Candidate");
-
-          if (!sessionId) {
-              try {
-                  const apiData = await startInterviewAPI(candidateName, candidateEmail);
-                  if (apiData) {
-                    setSessionId(apiData.sessionId);
-                    addMessage({
-                      id: "msg_first",
-                      role: "assistant",
-                      content: apiData.question,
-                    });
-                  }
-              } catch (sessionErr) {
-                  console.error("Failed to start session:", sessionErr);
-                  setSessionFailed(true);
-              }
-          }
-        })();
-
       } catch (err) {
         console.warn("Camera access denied or failed to load.", err);
+        toast.error("Camera Not Found", {
+           description: "Could not access your camera or microphone. Check permissions."
+        });
+      } finally {
+        setIsCameraReady(true);
+        intervalId = setTimeout(runPollLoop, 3000);
       }
     };
     
