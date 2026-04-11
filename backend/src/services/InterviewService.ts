@@ -299,7 +299,10 @@ export class InterviewService {
     });
     
     if (session.candidateEmail) {
-      await EmailService.sendDecisionEmail(session.candidateEmail, status, session.candidateName);
+      // Fire-and-forget email dispatch to prevent blocking the admin UI / hanging
+      EmailService.sendDecisionEmail(session.candidateEmail, status, session.candidateName).catch(err => {
+        console.error(`Failed to dispatch email asynchronously for ${sessionId}:`, err);
+      });
     } else {
       console.warn(`No candidate email found for session ${sessionId}. Skipping email dispatch.`);
     }
