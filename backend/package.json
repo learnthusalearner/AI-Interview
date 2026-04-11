@@ -4,8 +4,8 @@
   "main": "index.js",
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
-    "build": "npx prisma db push && npx prisma generate && tsc",
-    "start": "node --max-old-space-size=460 dist/server.js",
+    "build": "npx prisma generate && tsc",
+    "start": "npx prisma db push && node --max-old-space-size=460 dist/server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
