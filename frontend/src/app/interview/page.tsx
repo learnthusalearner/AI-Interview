@@ -23,6 +23,7 @@ export default function InterviewPage() {
   const isBootingRef = useRef(false);
   const [isVideoActive, setIsVideoActive] = useState(false);
   const [faceDetected, setFaceDetected] = useState(false);
+  const [sessionFailed, setSessionFailed] = useState(false);
   const sessionIdRef = useRef<string | null>(null);
   
   useEffect(() => {
@@ -131,24 +132,32 @@ export default function InterviewPage() {
            videoRef.current.play().catch(e => console.warn(e));
         }
         setIsVideoActive(true);
-
-        const candidateEmail = user?.primaryEmailAddress?.emailAddress;
-        const candidateName = user?.fullName || user?.firstName || (candidateEmail ? candidateEmail.split("@")[0] : "Candidate");
-
-        if (!sessionId) {
-            const apiData = await startInterviewAPI(candidateName, candidateEmail);
-            if (apiData) {
-              setSessionId(apiData.sessionId);
-              addMessage({
-                id: "msg_first",
-                role: "assistant",
-                content: apiData.question,
-              });
-            }
-        }
-
         setIsCameraReady(true);
         intervalId = setTimeout(runPollLoop, 3000);
+
+        // Run session init in parallel and handle errors separately without breaking camera
+        (async () => {
+          const candidateEmail = user?.primaryEmailAddress?.emailAddress;
+          const candidateName = user?.fullName || user?.firstName || (candidateEmail ? candidateEmail.split("@")[0] : "Candidate");
+
+          if (!sessionId) {
+              try {
+                  const apiData = await startInterviewAPI(candidateName, candidateEmail);
+                  if (apiData) {
+                    setSessionId(apiData.sessionId);
+                    addMessage({
+                      id: "msg_first",
+                      role: "assistant",
+                      content: apiData.question,
+                    });
+                  }
+              } catch (sessionErr) {
+                  console.error("Failed to start session:", sessionErr);
+                  setSessionFailed(true);
+              }
+          }
+        })();
+
       } catch (err) {
         console.warn("Camera access denied or failed to load.", err);
       }
@@ -287,7 +296,7 @@ export default function InterviewPage() {
     <div className="flex flex-col h-screen bg-black overflow-hidden relative">
       
       {/* Session Failure Overlay */}
-      {isCameraReady && !sessionId && (
+      {sessionFailed && (
        <div className="absolute inset-0 z-[100] flex flex-col bg-black items-center justify-center p-6 text-center">
           <p className="text-rose-500 font-medium text-xl">Failed to secure an encrypted session key.</p>
           <p className="text-zinc-500 text-sm mt-2">The OpenAI back-end might be unreachable or timed out.</p>
