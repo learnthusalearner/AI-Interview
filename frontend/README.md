@@ -1,40 +1,60 @@
-# Lumina AI - The Frontend Experience 🎨
+# AI Interviewer Frontend
 
-This directory houses the breathtaking visual layer of the **Lumina AI Platform**. Built with uncompromising attention to detail, this Next.js application captures the aesthetic of a premium, million-dollar SaaS product. 
+## Overview
+The frontend for the **AI Interview Platform** provides a dynamic, responsive, and secure interface for candidates to undergo automated evaluations, and for administrators to review their performance. 
 
-What makes it unique is the complete departure from flat, lifeless enterprise design—instead, we use heavy glassmorphism, dynamic Aurora gradients, and fluid `framer-motion` physics to make every click feel expensive.
+## Architecture
+Built heavily on modern React paradigms, the frontend utilizes **Next.js 16 (App Router)**.
+- **UI & Styling**: Crafted with **TailwindCSS v4**, **Shadcn UI**, and **@base-ui/react** to ensure a high-quality, accessible, and polished user experience. **Framer Motion** drives the micro-interactions and smooth page transitions.
+- **State Management**: managed globally via **Zustand** orchestrating interview states, proctoring flags, and chat history optimally without prop-drilling.
+- **Authentication**: Secured by **Clerk (@clerk/nextjs)** for rapid and secure user management, differentiating between Candidates and Admins seamlessly.
+- **Camera integration**: Interacts deeply with browser media APIs to capture candidate feeds locally. Crucially, proctoring frame snapshots are securely transmitted to the backend for ML evaluation, keeping the client lightweight and tamper-resistant.
 
-## 🏗️ Technical Structure
-
-- **Next.js (App Router)**: Lightning-fast, server-rendered React framework handling our routing and layout.
-- **Micro-Interactions (`framer-motion`)**: Elements never just appear; they float, they spring, and they glow dynamically based on user context.
-- **Zustand State**: Forget heavy Redux stores; we use hyper-optimized Zustand so that components only render precisely when they get new AI context.
-- **Shadcn UI & Tailwind v4**: A headless foundation mapped strictly to our bespoke `Outfit` font and deep-space color palette (Obsidian, Neon Cyan, and Violet).
-
-## 🗂️ Map of the Domain
-
+## Project Structure
 ```text
-src/
- ├── app/                 # The physical screens
- │   ├── admin/           # Lumina Command Center (3D Analytics)
- │   ├── dashboard/       # Applicant applicant tracking portal
- │   ├── interview/       # The WebRTC live chat arena
- │   └── page.tsx         # The cinematic landing screen
- ├── components/ui/       # Extracted, highly customized Shadcn blocks
- ├── hooks/               # Custom system abstractions (e.g., useAudioRecorder)
- ├── lib/store.ts         # Global Zustand state bridging the gaps
- └── services/api.ts      # Axios abstractions connecting to our Node API
+frontend/
+├── src/
+│   ├── app/              # Next.js App Router pages and layouts
+│   │   ├── interview/    # Candidate interview platform
+│   │   └── admin/        # Admin dashboard for reviewing metrics
+│   ├── components/       # Reusable UI components (buttons, camera interface, chat)
+│   ├── hooks/            # Custom React hooks (e.g., useCamera, useInterview)
+│   ├── lib/              # Utility functions, API clients mapping
+│   └── services/         # Interfaces for calling backend APIs
+├── public/               # Static assets
+├── middleware.ts         # Clerk Auth middleware
+├── tailwind.config.js
+└── package.json
 ```
 
-## 🚀 Booting the Visuals
+## Setup & Running Locally
 
-1. Ensure your `.env` contains:
-   ```env
-   NEXT_PUBLIC_API_URL=https://your-production-backend-url.com
-   NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_...
-   CLERK_SECRET_KEY=sk_test_...
-   ```
-2. Install dependencies: `npm install`
-3. Ignite the engine: `npm run dev`
+### 1. Prerequisites
+- **Node.js** (v18+ recommended)
 
-Your platform will launch securely to your configured domain. Be ready with microphone access so the Lumina Core can properly synchronize during testing!
+### 2. Environment Variables
+Create a `.env.local` file in the `frontend/` directory. Required variables typically include:
+```dotenv
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY="pk_test_..."
+CLERK_SECRET_KEY="sk_test_..."
+NEXT_PUBLIC_API_URL="http://localhost:3000/v1"
+```
+
+### 3. Installation
+```bash
+cd frontend
+npm install
+```
+
+### 4. Running the Application
+Start the development server:
+```bash
+npm run dev
+```
+The frontend will be accessible at `http://localhost:3001` (specifically port `3001` as configured in package.json).
+
+### 5. Production Build
+```bash
+npm run build
+npm start
+```

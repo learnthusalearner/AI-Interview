@@ -1,54 +1,31 @@
-# Lumina AI Platform ✨
+# Intelligent AI Interview Platform
 
-Welcome to **Lumina AI**, an ultra-premium, full-stack AI interviewing platform. This project elevates automated candidate screening by offering a conversational, voice-driven AI that interacts seamlessly with candidates, followed by deep, multifaceted analytics for administrators. 
+## The Problem
+Traditional initial screening processes for job applicants are heavily time-consuming for recruiters and often lack deep technical probing until the second/third rounds. Furthermore, asynchronous video platforms do not adapt to candidate responses and suffer from a lack of real-time cheating prevention.
 
-What makes Lumina AI unique is its hyper-modern aesthetic—trading standard flat forms for **cinematic dark modes, glassmorphism, and neon aurora gradients**, paired with a backend built to handle **real-time AI stream processing**.
+## What Was Built
+I built an **Intelligent AI Interview Platform** that autonomously interviews candidates conversationally via text, evaluating them dynamically using an AI. The platform actively adapts question difficulty, scores responses on metrics like *clarity*, *warmth*, and *simplicity*, and aggregates the results into an Admin dashboard. Concurrently, the platform enforces strict proctoring by quietly capturing and analyzing webcam feed snippets in real-time on the server to prevent cheating (identifying multiple people, use of cell phones, or the candidate stepping out of the frame).
 
----
+## Key Decisions & Trade-offs
+1. **Migrating Proctoring ML to Backend**: Initially considered running TensorFlow.js local inference directly in the browser (BlazeFace/COCO-SSD). **Decision**: I migrated this to the Node.js backend to massively improve security, as tech-savvy candidates could spoof or bypass client-side ML logic. **Trade-off**: High HTTP traffic overhead due to streaming Base64 images periodically and significantly higher CPU usage on the server.
+2. **PostgreSQL + Prisma**: Instead of opting for NoSQL (MongoDB), I used a strict relational database to map candidate sessions strictly with their subsequent micro-evaluations and message timelines, leveraging strong typed constraints.
+3. **Automated Cut-offs**: Implemented early termination mechanisms. If the system detects severe misconduct or repeatedly superficial answers, it immediately ends the session, saving compute costs (OpenAI API limits) and saving reviewers' time.
 
-## 🏗️ The Lumina Engine: Architecture & Project Structure
+## Challenges & Solutions
+1. **Challenge - Concurrent Camera Bottlenecks**: In the frontend, initializing the webcam feed at the exact moment the Next.js heavy App router initialized the React DOM blocked the main thread severely, causing video freezes or initialization failures.
+   **Solution**: We decoupled the camera initialization from the main render cycle via delay routines and robust asynchronous custom hooks, allowing the interview chat component to mount completely before attaching the proctoring stream, providing a smooth user experience.
+2. **Challenge - Docker Database Constraints**: Deploying the backend onto Render faced crashing errors because when stateless environments rebuilt, the database ORM was disconnected or out of sync.
+   **Solution**: Restructured the runtime sequence directly by merging ORM schema executions (`npx prisma db push`) into the `npm start` script, ensuring synchronization occurs reliably during startup without relying on manual pre-deployment steps.
+3. **Challenge - Typescript Arithmetic Conflicts**: Navigating numeric comparisons with dynamic JSON values loaded from our evaluations. Typescript failed to natively understand deeply nested metadata evaluation structures.
+   **Solution**: Refined our Interfaces and employed defensive type assertions for aggregated variables (`evalData.average as number`) to reliably protect mathematical integrity during scoring operations.
 
-Lumina AI firmly separates the client visual engine from the intense processing API. 
-
-### 1. `frontend/` (The Visual Engine)
-Built with **Next.js 16+ (App Router)** and **React 19**, the frontend is entirely focused on delivering a million-dollar UI experience. 
-- **Tech Highlights**: Tailwind CSS v4, Framer Motion for spring-physics interactions, Zustand for high-speed state, and Clerk for impenetrable Auth.
-- **Unique UI Features**: Aurora meshes, glowing floating action buttons, and a flawless 3D Isometric Chart for admin analytics.
-- **Structure**: 
-  - `src/app/` - The core routers (`/interview` for the live WebRTC socket room, `/admin` for the Command Center).
-  - `src/components/` - Shadcn UI wrappers combined with custom Lucide-react iconography.
-  - `src/services/` - Strictly typed Axios API layers communicating to the backend.
-
-### 2. `backend/` (The Logic Core)
-Built on **Node.js, Express, and TypeScript**, the backend orchestrates data storage and interfaces with the LLMs.
-- **Tech Highlights**: Prisma ORM over PostgreSQL, Socket.io for live bidirectional audio chunks, Zod for flawless runtime validation.
-- **Unique Processing**: Audio ingestion flows through `multer` to OpenAI's Whisper API, processes dialogue state via GPT-4, and streams back real-time context.
-- **Structure**:
-  - `src/controllers/` - Handles REST endpoints and triggers background evaluations.
-  - `src/sockets/` - Dedicated event hooks for the live interviewing arena.
-  - `src/services/` - Abstracted OpenAI logic and DB transactions.
+## What I'd Improve or Add with More Time
+- **WebRTC Stream Infrastructure**: Replacing the current standard HTTP Base64 frame polling with a direct WebRTC streaming layer to slash latency, minimize HTTP overhead, and reduce the server's event-loop blocking from Tensorflow.js operations.
+- **Background Worker Queue**: Offloading the heavyweight ML Face/Object detection into a dedicated microservice (e.g., Python FastAPI backend with actual GPU inference or a Redis BullMQ worker in TS) to completely unblock the primary Node APIs executing the conversational AI.
+- **Expanded ATS Integrations**: Adding APIs to export comprehensive interview PDFs or dispatching structured data into greenhouse/workable instantly after the interview concludes.
 
 ---
 
-## 🚀 Quick Setup & Deployment
-
-Lumina AI relies on parallel execution of both environments. Ensure you have **Node.js v20+** and a running **PostgreSQL** instance.
-
-### Phase 1: Backend API Boot
-1. Open terminal -> `cd backend`.
-2. `npm install`.
-3. Configure your `.env` (requires `DATABASE_URL` and `OPENAI_API_KEY`).
-4. Apply the database schema: `npx prisma db push`.
-5. Run the server: `npm run dev` (Connects to port 5000/8000 depending on config).
-
-### Phase 2: Frontend Command Center Boot
-1. Open a new terminal -> `cd frontend`.
-2. `npm install`.
-3. Configure `.env` (requires `NEXT_PUBLIC_API_URL` pointing to the backend, and Clerk keys).
-4. Run the UI: `npm run dev`.
-5. Your browser will launch the ultra-premium landing page on `localhost:3000`.
-
----
-
-## 🤝 Philosophy
-Lumina AI isn't just an app; it's a statement on how enterprise tools should feel. We believe that tools for human resources should embody high design constraints and feel like magic to interact with.
+### Navigation
+- [Backend Documentation](./backend/README.md)
+- [Frontend Documentation](./frontend/README.md)
