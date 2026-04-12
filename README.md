@@ -1,9 +1,31 @@
 # The AI Tutor Screener
 
+> 🔐 **ADMIN PASSWORD: `Cuemath`**
+
+---
+
+## Application Features
+
+### 📧 SMTP — Automated Email Notifications
+Once a candidate completes their interview and a decision is made, the system automatically triggers an SMTP-based email to their registered address notifying them of the outcome. If selected, they receive a congratulatory email with next steps; if rejected, they receive a polite declination. This is handled server-side using a transactional mail service, ensuring candidates are never left waiting and the communication pipeline requires zero manual recruiter effort.
+
+### 🔁 Cold Start Prevention — Keep-Alive Polling
+The backend is hosted on Render's free tier, which spins down inactive servers after a period of inactivity. To prevent this, a background polling mechanism pings the server at regular intervals, keeping it perpetually warm. This ensures candidates never experience a slow cold-start delay when beginning their interview session.
+
+### 🤖 ML Face Detection — Anti-Cheating System
+An ML-based face detection model (powered by MediaPipe / face-api.js) runs directly in the candidate's browser during the interview. It continuously monitors the video feed to detect whether the candidate's face is present and centred in the frame. If the candidate looks away, leaves the frame, or a second face is detected, the system flags it as a potential cheating event in real time and logs it to the assessment report.
+
+### 🔐 OAuth Authentication via Clerk
+Candidate and recruiter authentication is fully managed by Clerk, which provides OAuth-based sign-in flows (Google, GitHub, etc.). Clerk handles session tokens, JWTs, and secure credential management — meaning zero sensitive auth logic lives on the custom backend. This gives users a seamless, passwordless sign-in experience while keeping the platform secure by default.
+
+---
+
 ## What I Built and Which Problem I Picked
+
 **The Problem:** Cuemath hires hundreds of tutors every month. To ensure high-quality education, every candidate must be screened for crucial soft skills: communication clarity, patience, warmth, the ability to simplify complex topics, and English fluency. Currently, human interviewers conduct 10-minute calls to assess this. However, human-led screening is expensive, inherently subjective, slow to execute, and highly difficult to scale during hiring surges.
 
-**What I Built:** I built a fully functional, interactive **AI Tutor Screener**. This platform conducts dynamic, browser-based voice conversations with tutor candidates to assess whether they possess to the right pedagogical temperament to move to the next round. 
+**What I Built:** I built a fully functional, interactive **AI Tutor Screener**. This platform conducts dynamic, browser-based voice conversations with tutor candidates to assess whether they possess the right pedagogical temperament to move to the next round.
+
 This system isn't designed to test deep mathematical theorems; rather, it heavily simulates the messy reality of teaching a child. The AI acts as a curious, sometimes frustrated, or confused 9-year-old student, asking questions like *"Explain fractions to me"* or indicating *"I don't understand."* It listens to the candidate's spoken response, adapts dynamically, and evaluates their soft skills. After the interview, it produces a structured, dimension-by-dimension assessment (clarity, warmth, simplicity, patience, fluency) backed by exact quotes from the candidate to justify its grading.
 
 ---
@@ -39,7 +61,7 @@ This system isn't designed to test deep mathematical theorems; rather, it heavil
    - *Solution:* I optimized the architecture by heavily streamlining the system prompts and preparing the UI to signal "active listening." By providing visual feedback to the candidate that the "Student is thinking...", it bridges the latency gap and keeps the interaction feeling polite and natural rather than broken.
 
 3. **Database Synchronization in Docker**
-   - *Challenge:* When deploying the backend in isolated environments, the Prisma ORM frequently crashed the deployment because the database schema was out of sync upon startup. 
+   - *Challenge:* When deploying the backend in isolated environments, the Prisma ORM frequently crashed the deployment because the database schema was out of sync upon startup.
    - *Solution:* I refactored the deployment runtime commands directly in the `npm start` pipeline to automatically execute `npx prisma db push` before booting the Node server. This ensured the schema was always robustly applied in stateless environments before traffic hit the server.
 
 ---
@@ -47,10 +69,10 @@ This system isn't designed to test deep mathematical theorems; rather, it heavil
 ## What I'd Improve or Add with More Time
 
 1. **Audio-Native Emotion Analysis (Prosody)**
-   - Currently, the AI evaluates "warmth" and "patience" strictly from the transcribed text (the words the candidate used). With more time, I would integrate native audio models that assess *how* they said it—detecting frustration, sighs, or a cheerful tone directly from the acoustic features.
+   - Currently, the AI evaluates "warmth" and "patience" strictly from the transcribed text (the words the candidate used). With more time, I would integrate native audio models that assess *how* they said it — detecting frustration, sighs, or a cheerful tone directly from the acoustic features.
 
 2. **Interruptibility / Full Duplex Audio via WebSockets**
-   - Real children interrupt their teachers. Currently, the architecture operates sequentially (Candidate speaks -> AI thinks -> AI speaks). I would migrate to a pure WebSocket-based streaming architecture, allowing the candidate to interrupt the AI mid-sentence, truly simulating a hyper-realistic tutoring environment.
+   - Real children interrupt their teachers. Currently, the architecture operates sequentially (Candidate speaks → AI thinks → AI speaks). I would migrate to a pure WebSocket-based streaming architecture, allowing the candidate to interrupt the AI mid-sentence, truly simulating a hyper-realistic tutoring environment.
 
 3. **Interactive Digital Whiteboard**
    - Math tutoring is highly visual. I would add a synchronized digital canvas on the frontend. The AI "student" could draw a completely incorrect geometry shape, and the candidate would have to explain the mistake both verbally and visually.

@@ -102,7 +102,7 @@ export class OpenAIService {
   /**
    * JSON Structure Evaluator (Final Output)
    */
-  static async evaluateInterview(messages: any[]): Promise<any> {
+  static async evaluateInterview(messages: any[], userMessageCount?: number): Promise<any> {
     const evaluationPrompt = `
       You are an expert AI evaluator for Cuemath tutor interviews. Review the following transcript.
       
@@ -135,10 +135,16 @@ export class OpenAIService {
       4 = Weak (struggles to communicate)
       1-2 = Poor (not suitable for tutoring)
 
-      IMPORTANT:
+      IMPORTANT RULES ABOUT INTERVIEW LENGTH:
+      - A complete interview consists of exactly 10 candidate responses.
+      - The candidate provided exactly ${userMessageCount ?? 'an unknown number of'} responses in this transcript.
+      - EARLY TERMINATION PENALTY: If the candidate answered 5 or fewer questions, you MUST heavily penalize ALL of their scores (maximum score of 4 for any category) and set overallRecommendation to "FAIL". Leaving an interview early or failing out early is an automatic failure, regardless of how good their few answers were.
+      - If they answered 6-9 questions, apply a moderate penalty across all scores and add "Incomplete Interview" to riskFlags.
+
+      OTHER IMPORTANT RULES:
       - Use actual quotes from candidate responses in \`evidenceQuotes\`
       - Identify subtle "risk flags" like long monologues or skipping steps
-      - Be fair, not overly harsh
+      - Be fair, not overly harsh (unless the early termination penalty applies)
 
       Return ONLY valid JSON in exactly this root-level schema shape (do NOT nest score/reasoning inside sub-objects arbitrarily, output exactly this):
       {

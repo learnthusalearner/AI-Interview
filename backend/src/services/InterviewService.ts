@@ -207,7 +207,8 @@ export class InterviewService {
       .filter((m) => m.role !== 'system')
       .map(m => ({ role: m.role, content: m.content }));
 
-    const evaluation = await OpenAIService.evaluateInterview(apiMessages);
+    const userMessageCount = apiMessages.filter(m => m.role === 'user').length;
+    const evaluation = await OpenAIService.evaluateInterview(apiMessages, userMessageCount);
     
     // Inject visual score override if front-end ML processed it
     if (videoEngagementScore !== undefined && typeof videoEngagementScore === 'number' && evaluation.engagement) {
