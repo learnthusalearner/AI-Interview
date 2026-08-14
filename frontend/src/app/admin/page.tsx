@@ -21,7 +21,7 @@ export default function AdminPage() {
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    if (password === "Cuemath") {
+    if (password === "Admin123") {
       setIsAuthenticated(true);
       fetchCandidates();
       toast.success("Welcome, Admin");

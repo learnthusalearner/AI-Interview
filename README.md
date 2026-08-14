@@ -1,6 +1,6 @@
 # The AI Tutor Screener
 
-> 🔐 **ADMIN PASSWORD: `Cuemath`**
+> 🔐 **ADMIN PASSWORD: `Admin123`**
 
 ---
 
@@ -22,7 +22,7 @@ Candidate and recruiter authentication is fully managed by Clerk, which provides
 
 ## What I Built and Which Problem I Picked
 
-**The Problem:** Cuemath hires hundreds of tutors every month. To ensure high-quality education, every candidate must be screened for crucial soft skills: communication clarity, patience, warmth, the ability to simplify complex topics, and English fluency. Currently, human interviewers conduct 10-minute calls to assess this. However, human-led screening is expensive, inherently subjective, slow to execute, and highly difficult to scale during hiring surges.
+**The Problem:** The company hires hundreds of tutors every month. To ensure high-quality education, every candidate must be screened for crucial soft skills: communication clarity, patience, warmth, the ability to simplify complex topics, and English fluency. Currently, human interviewers conduct 10-minute calls to assess this. However, human-led screening is expensive, inherently subjective, slow to execute, and highly difficult to scale during hiring surges.
 
 **What I Built:** I built a fully functional, interactive **AI Tutor Screener**. This platform conducts dynamic, browser-based voice conversations with tutor candidates to assess whether they possess the right pedagogical temperament to move to the next round.
 
@@ -45,7 +45,7 @@ This system isn't designed to test deep mathematical theorems; rather, it heavil
    - *Tradeoff:* Requiring strict structured data from the LLM limits its token generation speed and requires complex prompt engineering/validation (using tools like Zod). The tradeoff favors actionable recruiter data over raw speed.
 
 4. **Focusing on Candidate Experience & Security**
-   - *Decision:* This is a candidate's first interaction with Cuemath. The UI is built with Next.js to be clean, welcoming, and professional. From a security standpoint, all LLM processing, evaluation, and data storage happens strictly on the Node.js backend.
+   - *Decision:* This is a candidate's first interaction with the company. The UI is built with Next.js to be clean, welcoming, and professional. From a security standpoint, all LLM processing, evaluation, and data storage happens strictly on the Node.js backend.
    - *Tradeoff:* Moving everything to the backend requires a robust server architecture (Express/Prisma/PostgreSQL) rather than a simple serverless Next.js app, but it ensures absolutely no API keys or sensitive evaluation metrics are exposed to the client.
 
 ---
@@ -78,7 +78,7 @@ This system isn't designed to test deep mathematical theorems; rather, it heavil
    - Math tutoring is highly visual. I would add a synchronized digital canvas on the frontend. The AI "student" could draw a completely incorrect geometry shape, and the candidate would have to explain the mistake both verbally and visually.
 
 4. **Integration with ATS (Applicant Tracking Systems)**
-   - Automate the pipeline further by dispatching the rich JSON rubrics and candidate quotes directly into Cuemath's ATS (like Greenhouse or Lever) the second the interview concludes, drastically reducing recruiter administrative overhead.
+   - Automate the pipeline further by dispatching the rich JSON rubrics and candidate quotes directly into the company's ATS (like Greenhouse or Lever) the second the interview concludes, drastically reducing recruiter administrative overhead.
 
 ---
 

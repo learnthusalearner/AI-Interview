@@ -18,7 +18,7 @@ const envSchema = z.object({
   SMTP_PORT: z.string().default('587'),
   SMTP_USER: z.string().optional(),
   SMTP_PASS: z.string().optional(),
-  SMTP_FROM: z.string().default('"Cuemath" <careers@cuemath.com>'),
+  SMTP_FROM: z.string().default('"Careers" <careers@example.com>'),
 });
 
 const _env = envSchema.safeParse(process.env);

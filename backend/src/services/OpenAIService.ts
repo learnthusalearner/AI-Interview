@@ -104,7 +104,7 @@ export class OpenAIService {
    */
   static async evaluateInterview(messages: any[], userMessageCount?: number): Promise<any> {
     const evaluationPrompt = `
-      You are an expert AI evaluator for Cuemath tutor interviews. Review the following transcript.
+      You are an expert AI evaluator for tutor interviews. Review the following transcript.
       
       --------------------------------------------------
       📊 EVALUATION

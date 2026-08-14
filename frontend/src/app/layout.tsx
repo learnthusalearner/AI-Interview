@@ -18,8 +18,8 @@ export default function RootLayout({
 }>) {
   return (
     <ClerkProvider>
-      <html lang="en" className="dark" style={{ colorScheme: "dark" }}>
-        <body className={`${outfit.className} min-h-screen bg-background antialiased selection:bg-cyan-500/30 selection:text-cyan-50`}>
+      <html lang="en" className="dark" style={{ colorScheme: "dark" }} suppressHydrationWarning>
+        <body suppressHydrationWarning className={`${outfit.className} min-h-screen bg-background antialiased selection:bg-cyan-500/30 selection:text-cyan-50`}>
           <main className="relative flex flex-col min-h-screen">
             {children}
             <Toaster theme="dark" position="top-center" />

@@ -53,15 +53,15 @@ export class EmailService {
       htmlContent = `
         <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
           <h2 style="color: #0d9488;">Congratulations, ${name}</h2>
-          <p>We are pleased to inform you that you have been selected to move forward in the interview process for the Cuemath Tutor role.</p>
+          <p>We are pleased to inform you that you have been selected to move forward in the interview process for the Tutor role.</p>
           <p>Your performance in the virtual screening was impressive. Our team will contact you shortly with details regarding the next steps.</p>
           <br />
           <p>Best regards,</p>
-          <p><strong>The Cuemath Recruitment Team</strong></p>
+          <p><strong>The Recruitment Team</strong></p>
         </div>
       `;
     } else {
-      subject = 'Update on your Cuemath Tutor Application';
+      subject = 'Update on your Tutor Application';
       htmlContent = `
         <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
           <h2>Dear ${name},</h2>
@@ -70,7 +70,7 @@ export class EmailService {
           <p>We appreciate your interest in joining our team and wish you the best in your future endeavors.</p>
           <br />
           <p>Best regards,</p>
-          <p><strong>The Cuemath Recruitment Team</strong></p>
+          <p><strong>The Recruitment Team</strong></p>
         </div>
       `;
     }
