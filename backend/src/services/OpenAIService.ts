@@ -3,8 +3,11 @@ import fs from 'fs';
 import { env } from '../config/env';
 import { logger } from '../config/logger';
 
+const OPENAI_API_KEY = env.OPENAI_API_KEY || process.env.OPENAI_API_KEY || '';
 const openai = new OpenAI({
-  apiKey: env.OPENAI_API_KEY,
+  apiKey: OPENAI_API_KEY,
+  timeout: 20000,
+  maxRetries: 1,
 });
 
 export class OpenAIService {
@@ -18,7 +21,7 @@ export class OpenAIService {
         model: 'whisper-1',
         response_format: 'text',
       });
-      return response as unknown as string; // text format returns a plain string
+      return response as unknown as string;
     } catch (error) {
       logger.error(`OpenAI Transcription Error: ${error}`);
       throw new Error('Failed to transcribe audio.');
@@ -26,7 +29,7 @@ export class OpenAIService {
   }
 
   /**
-   * Chat completion handler
+   * Chat completion handler using OpenAI gpt-4o-mini
    */
   static async getChatCompletion(messages: any[], systemPrompt?: string): Promise<string> {
     const apiMessages = systemPrompt 
@@ -40,8 +43,8 @@ export class OpenAIService {
         temperature: 0.7,
       });
       return response.choices[0].message.content || '';
-    } catch (error) {
-      logger.error(`OpenAI Chat Error: ${error}`);
+    } catch (error: any) {
+      logger.error(`OpenAI Chat Error: ${error.message || error}`);
       throw new Error('Failed to get chat completion.');
     }
   }
@@ -94,7 +97,6 @@ export class OpenAIService {
       return JSON.parse(cleanContent);
     } catch (error) {
       logger.error(`Single Answer Eval Error: ${error}`);
-      // Fallback safe scores so interview doesn't crash on one bad JSON
       return { clarity: 5, warmth: 5, simplicity: 5, patience: 5, fluency: 5, engagement: 5, average: 5.0, responseQuality: "clear" };
     }
   }
@@ -123,7 +125,7 @@ export class OpenAIService {
       - teachingStyle (string: 'example-driven', 'structured', 'unclear', 'authoritative', etc)
       - riskFlags (array of strings, e.g., ["impatience", "vague", "jargon-heavy", "negative tone"])
       - keyHighlights (array of strings praising specific good things they did)
-      - consistencyAnalysis (string summarizing if they improved or contradicted themselves)
+      - consistencyAnalysis (string summarizing if they improved or contradicted Governments/themselves)
       - communicationStyleAnalysis (object with fields: structure (string), examplesUsed (boolean), stepByStep (boolean))
 
       --------------------------------------------------
@@ -175,16 +177,14 @@ export class OpenAIService {
           { role: 'system', content: evaluationPrompt },
           ...messages
         ],
-        temperature: 0.2, // low temperature for consistent JSON
+        temperature: 0.2,
       });
 
       const content = response.choices[0].message.content || '{}';
-      // Sometimes it wraps in ```json ... ```, so clean it safely
       const cleanContent = content.replace(/```json/g, '').replace(/```/g, '').trim();
       return JSON.parse(cleanContent);
     } catch (error) {
       logger.error(`OpenAI Eval Error: ${error}`);
-      // Fallback safe evaluation instead of crashing the server via unhandled rejection
       return {
         clarity: { score: 5, reasoning: "Evaluation generation failed." },
         simplicity: { score: 5, reasoning: "Evaluation generation failed." },
@@ -203,3 +203,4 @@ export class OpenAIService {
     }
   }
 }
+

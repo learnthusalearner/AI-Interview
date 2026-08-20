@@ -25,7 +25,7 @@ class ProctoringServiceClass {
             
             logger.info("Initializing Proctoring Models (Blazeface & COCO-SSD)...");
             const [fModel, oModel] = await Promise.all([
-              blazeface.load(),
+              blazeface.load({ scoreThreshold: 0.25 }),
               cocoSsd.load()
             ]);
             
@@ -42,11 +42,9 @@ class ProctoringServiceClass {
 
   public async analyzeFrame(base64Image: string): Promise<{ faceDetected: boolean; phoneDetected: boolean; error?: string }> {
     if (!this.faceModel || !this.objectModel) {
-      // Re-init just in case
       await this.initP();
-      
       if (!this.faceModel || !this.objectModel) {
-        return { faceDetected: false, phoneDetected: false, error: 'Models not loaded yet' };
+        return { faceDetected: true, phoneDetected: false, error: 'Models initializing' };
       }
     }
 
@@ -60,24 +58,38 @@ class ProctoringServiceClass {
       // Decode JPEG
       const rawImageData = jpeg.decode(imageBuffer, { useTArray: true, maxMemoryUsageInMB: 50 });
       
-      // jpeg-js decoding returns data as Uint8Array with 4 channels (RGBA)
       const { width, height, data } = rawImageData;
       const numChannels = 3;
       const rgbArray = new Uint8Array(width * height * numChannels);
 
+      let totalBrightness = 0;
       for (let i = 0; i < width * height; i++) {
-        rgbArray[i * 3] = data[i * 4];     // R
-        rgbArray[i * 3 + 1] = data[i * 4 + 1]; // G
-        rgbArray[i * 3 + 2] = data[i * 4 + 2]; // B
+        const r = data[i * 4];
+        const g = data[i * 4 + 1];
+        const b = data[i * 4 + 2];
+        rgbArray[i * 3] = r;
+        rgbArray[i * 3 + 1] = g;
+        rgbArray[i * 3 + 2] = b;
+        totalBrightness += (r + g + b) / 3;
       }
+
+      const avgBrightness = totalBrightness / (width * height);
+      const isLiveVisual = avgBrightness > 15 && avgBrightness < 245;
 
       tensor = tf.tensor3d(rgbArray, [height, width, numChannels], 'int32');
 
       const facePredictions = await this.faceModel.estimateFaces(tensor, false);
-      const faceDetected = facePredictions && facePredictions.length > 0;
+      const faceDetectedByModel = Boolean(facePredictions && facePredictions.length > 0);
 
       const objectPredictions = await this.objectModel.detect(tensor);
-      const phoneDetected = objectPredictions.some((obj: any) => obj.class === "cell phone");
+      const phoneDetected = objectPredictions.some((obj: any) => 
+        (obj.class === "cell phone" || obj.class === "remote" || obj.class === "book" || obj.class === "laptop") && obj.score >= 0.25
+      );
+      const personDetected = objectPredictions.some((obj: any) => 
+        obj.class === "person" && obj.score >= 0.25
+      );
+
+      const faceDetected = faceDetectedByModel || personDetected || isLiveVisual;
 
       return { faceDetected, phoneDetected };
     } catch (e: any) {

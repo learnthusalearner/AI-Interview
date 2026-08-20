@@ -3,6 +3,7 @@ import { OpenAIService } from './OpenAIService';
 import { EmailService } from './EmailService';
 import { AppError } from '../utils/AppError';
 import { Role } from '@prisma/client';
+import { logger } from '../config/logger';
 
 const SYSTEM_PROMPT = `You are an AI interviewer evaluating tutor candidates for teaching children in a warm, natural spoken style.
 
@@ -82,7 +83,20 @@ export class InterviewService {
 
     // Create a uniquely seeded prompt for the first completion to force variety
     const initPrompt = `${SYSTEM_PROMPT}\n\n[System Seed: ${Math.random()}]\nPick a highly creative and uniquely randomized pedagogical topic or behavioral scenario for the first question to ensure variety.`;
-    const firstQuestion = await OpenAIService.getChatCompletion([{ role: 'system', content: initPrompt }]);
+    
+    let firstQuestion = "";
+    try {
+      firstQuestion = await OpenAIService.getChatCompletion([{ role: 'system', content: initPrompt }]);
+    } catch (err: any) {
+      logger.error(`[InterviewService] Failed to generate first question: ${err.message}. Using fallback question.`);
+      const fallbacks = [
+        "Welcome! To start off, imagine you're tutoring an 8-year-old student who says, 'I hate math, it's too hard and boring.' How would you respond to them in your first minute to build rapport and change their mind?",
+        "Hello! Let's begin. Imagine you're explaining the concept of fractions to a confused 3rd grader. What real-world objects or child-friendly analogies would you use to help them understand?",
+        "Welcome! Suppose a student gets frustrated and starts crying during your session because they can't solve a problem. How would you handle this situation with empathy and patience?",
+        "Hello! Let's start the teaching simulation. If a student tells you, 'My parents explained this math formula differently, your way is wrong,' how would you manage this without sounding dismissive?"
+      ];
+      firstQuestion = fallbacks[Math.floor(Math.random() * fallbacks.length)];
+    }
 
     // Save assistant's first question
     await prisma.message.create({
@@ -118,18 +132,24 @@ export class InterviewService {
     // Micro-evaluate the user's answer
     const evalData = await OpenAIService.evaluateSingleAnswer(aiQuestion, userText);
 
+    const toIntScore = (val: any): number | undefined => {
+      if (val === undefined || val === null) return undefined;
+      const num = Math.round(Number(val));
+      return isNaN(num) ? undefined : Math.min(10, Math.max(1, num));
+    };
+
     // Save user response with metrics
     await prisma.message.create({
       data: {
         interviewSessionId: session.id,
         role: Role.user,
         content: userText,
-        clarity: evalData.clarity,
-        warmth: evalData.warmth,
-        simplicity: evalData.simplicity,
-        patience: evalData.patience,
-        fluency: evalData.fluency,
-        engagement: evalData.engagement
+        clarity: toIntScore(evalData?.clarity),
+        warmth: toIntScore(evalData?.warmth),
+        simplicity: toIntScore(evalData?.simplicity),
+        patience: toIntScore(evalData?.patience),
+        fluency: toIntScore(evalData?.fluency),
+        engagement: toIntScore(evalData?.engagement)
       }
     });
 
@@ -175,7 +195,22 @@ export class InterviewService {
       }
     }
 
-    const aiReply = await OpenAIService.getChatCompletion(aiContext);
+    let aiReply = "";
+    try {
+      aiReply = await OpenAIService.getChatCompletion(aiContext);
+    } catch (err: any) {
+      logger.error(`[InterviewService] Chat completion failed: ${err.message}. Using fallback reply.`);
+      if (shouldCutoff) {
+        aiReply = "Thank you for sharing all your tutoring strategies. We have completed all the questions for today. I will compile your feedback and wish you the best of luck!";
+      } else {
+        const fallbacks = [
+          "That sounds like a very creative tutoring strategy. Could you elaborate on how you would implement that with an 8-year-old child who easily gets distracted?",
+          "I appreciate your patience and warmth there. How would you explain that exact same point using a real-world child-friendly analogy?",
+          "I understand. What is another creative method or game you could introduce to help a student who is struggling to grasp that math concept?"
+        ];
+        aiReply = fallbacks[Math.floor(Math.random() * fallbacks.length)];
+      }
+    }
 
     // Save assistant response
     const assistantMessage = await prisma.message.create({
@@ -216,20 +251,23 @@ export class InterviewService {
       evaluation.engagement.reasoning = `(Visual Override) Camera tracking detected ${videoEngagementScore * 10}% visual engagement during the session.`;
     }
 
-    let totalCheatCount = 0;
-    if (cheatFlags && cheatFlags.length > 0) {
-      const mobileCount = cheatFlags.filter(f => f === "MOBILE_PHONE").length;
-      const absentCount = cheatFlags.filter(f => f === "ABSENT_USER").length;
-      totalCheatCount = mobileCount + absentCount;
+    const mobileCount = cheatFlags ? cheatFlags.filter(f => f === "MOBILE_PHONE" || f === "UNAUTHORIZED_DEVICE").length : 0;
+    const absentCount = cheatFlags ? cheatFlags.filter(f => f === "ABSENT_USER").length : 0;
+    const computedMisconductScore = (mobileCount * 2) + absentCount;
 
-      evaluation.proctoringSummary = {
-         mobilePhoneCount: mobileCount,
-         absenceCount: absentCount
-      };
+    // Use DB cheatCount if atomic real-time tracking recorded higher, else use computed score
+    const misconductScore = Math.max(session.cheatCount || 0, computedMisconductScore);
 
+    evaluation.proctoringSummary = {
+      misconductScore,
+      mobilePhoneCount: mobileCount,
+      absenceCount: absentCount
+    };
+
+    if (misconductScore > 0) {
       const customFlags = [];
-      if (mobileCount > 0) customFlags.push(`PROCTOR VIOLATION: Unauthorized device (Mobile) detected ${mobileCount} time(s).`);
-      if (absentCount > 0) customFlags.push(`PROCTOR VIOLATION: Candidate left camera view ${absentCount} time(s).`);
+      if (mobileCount > 0) customFlags.push(`PROCTOR VIOLATION: Unauthorized device (Mobile) detected ${mobileCount} time(s) [+${mobileCount * 2} misconduct pts].`);
+      if (absentCount > 0) customFlags.push(`PROCTOR VIOLATION: Candidate out of camera frame ${absentCount} time(s) [+${absentCount} misconduct pts].`);
 
       evaluation.riskFlags = [...(evaluation.riskFlags || []), ...customFlags];
       evaluation.overallRecommendation = "FLAGGED";
@@ -240,7 +278,7 @@ export class InterviewService {
       where: { id: sessionId },
       data: {
         status: 'COMPLETED',
-        cheatCount: totalCheatCount,
+        cheatCount: misconductScore,
         evaluationData: evaluation,
         overallRecommendation: evaluation.overallRecommendation || 'UNKNOWN',
         totalScore: (evaluation.clarity?.score || 0) + (evaluation.warmth?.score || 0) + (evaluation.simplicity?.score || 0) + (evaluation.patience?.score || 0) + (evaluation.fluency?.score || 0) + (evaluation.engagement?.score || 0)

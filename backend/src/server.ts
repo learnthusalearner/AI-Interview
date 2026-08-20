@@ -7,13 +7,19 @@ import { prisma } from './config/prisma';
 import { setupSockets } from './sockets';
 import { startKeepAlive } from './utils/keepAlive';
 
+import { inferenceService } from './ml/services/inferenceService';
+
 const server = http.createServer(app);
 
 const io = new Server(server, {
   cors: {
-    origin: env.CORS_ORIGIN,
+    origin: '*',
     methods: ['GET', 'POST'],
+    credentials: true,
   },
+  transports: ['websocket', 'polling'],
+  pingTimeout: 30000,
+  pingInterval: 10000,
 });
 
 setupSockets(io);
@@ -26,6 +32,11 @@ server.listen(PORT, async () => {
     logger.info('📦 Connected to PostgreSQL DB via Prisma');
     logger.info(`🚀 Server running in ${env.NODE_ENV} mode on port ${PORT}`);
     startKeepAlive();
+    
+    // Initialize server-side vision models once on startup
+    inferenceService.initialize().catch((mlErr) => {
+      logger.error(`[ML] Background model preload warning: ${mlErr.message}`);
+    });
   } catch (error: any) {
     logger.error('Database connection might be delayed. Prisma will lazily connect on next request.', error.message);
     startKeepAlive();

@@ -56,6 +56,7 @@ export class InterviewController {
   static async proctorFrame(req: Request, res: Response) {
     try {
       const { sessionId, image } = req.body;
+      console.log(`[PROCTOR] Incoming image prefix: ${image ? image.substring(0, 40) : 'undefined'}`);
       const result = await ProctoringService.analyzeFrame(image);
       res.status(200).json({ success: true, data: result });
     } catch (error: any) {

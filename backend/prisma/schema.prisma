@@ -22,6 +22,7 @@ model InterviewSession {
   updatedAt             DateTime          @updatedAt
 
   messages              Message[]
+  detectionEvents       DetectionEvent[]
 }
 
 model Message {
@@ -56,4 +57,15 @@ enum Role {
   system
   user
   assistant
+}
+
+model DetectionEvent {
+  id                 String           @id @default(uuid())
+  interviewSessionId String
+  interviewSession   InterviewSession @relation(fields: [interviewSessionId], references: [id], onDelete: Cascade)
+  eventType          String           // "FACE_ABSENCE", "MULTIPLE_FACES", "UNAUTHORIZED_DEVICE", "SUSPICIOUS_OBJECT"
+  objectClass        String?
+  confidence         Float?
+  riskLevel          String           // "HIGH", "MEDIUM", "LOW"
+  timestamp          DateTime         @default(now())
 }

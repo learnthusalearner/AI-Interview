@@ -10,6 +10,8 @@ import { logger } from './config/logger';
 import apiV1Routes from './routes/v1';
 import { errorHandler } from './middlewares/errorHandler';
 
+import mlRoutes from './ml/routes/mlRoutes';
+
 const app = express();
 
 // Trust the reverse proxy (Render) so rate limiting works per client IP
@@ -23,6 +25,10 @@ app.use(express.urlencoded({ limit: '20mb', extended: true }));
 app.get('/', (req, res) => {
   res.status(200).json({ success: true, message: 'Lumina AI Backend is running correctly on Render.' });
 });
+
+// Mount High-Throughput Real-Time Computer Vision API
+app.use('/api/ml', mlRoutes);
+app.use('/api/v1/ml', mlRoutes);
 
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, 

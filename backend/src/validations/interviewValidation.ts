@@ -29,7 +29,7 @@ export const submitFeedbackSchema = z.object({
 
 export const proctorFrameSchema = z.object({
   body: z.object({
-    sessionId: z.string().uuid('Invalid Session ID'),
+    sessionId: z.string().optional(),
     image: z.string().min(10, 'Invalid image data'), // base64 image
   }),
 });
