@@ -19,12 +19,15 @@ backend/
 │   ├── config/           # Environment variables and API configurations
 │   ├── controllers/      # Route handlers implementing business logic
 │   ├── middlewares/      # Security, validation, and error middlewares
+│   ├── ml/               # TensorFlow inference service & ML routes
 │   ├── routes/           # Express API route definitions
 │   ├── services/         # Core business logic (AI, Proctoring, Email)
+│   ├── sockets/          # Socket.IO real-time proctoring handlers
 │   ├── utils/            # Helper functions and constants
 │   ├── validations/      # Zod validation schemas for requests
 │   ├── app.ts            # Express application setup
 │   └── server.ts         # Server entry point
+├── .env.example          # Reference env file — copy to .env
 ├── package.json
 └── tsconfig.json
 ```
@@ -32,19 +35,33 @@ backend/
 ## Setup & Running Locally
 
 ### 1. Prerequisites
-- **Node.js** (v18+ recommended)
-- **PostgreSQL** Database
+- **Node.js** v18+
+- **PostgreSQL** database — [Neon](https://neon.tech) (free cloud) or local
 
 ### 2. Environment Variables
-Create a `.env` file in the `backend/` directory referencing `.env.example` if available. Required variables typically include:
-```dotenv
-PORT=3000
-DATABASE_URL="postgresql://user:password@localhost:5432/interview_db"
-OPENAI_API_KEY="your_openai_api_key_here"
-EMAIL_HOST="smtp.example.com"
-EMAIL_USER="your_email@example.com"
-EMAIL_PASS="your_email_password"
+Copy the example file and fill in your values:
+```bash
+cp .env.example .env
 ```
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `DATABASE_URL` | ✅ | PostgreSQL connection string |
+| `OPENAI_API_KEY` | ✅ | Used for Whisper STT (`whisper-1`) and chat/eval (`gpt-4o-mini`) |
+| `GEMINI_API_KEY` | ⬜ | When set, Gemini is the primary LLM; OpenAI becomes fallback |
+| `PORT` | ⬜ | Server port (default: `3000`) |
+| `NODE_ENV` | ⬜ | `development` / `production` / `test` |
+| `CORS_ORIGIN` | ⬜ | Allowed CORS origin (default: `*`) |
+| `SMTP_HOST` | ⬜ | SMTP host for email notifications |
+| `SMTP_PORT` | ⬜ | SMTP port (default: `587`) |
+| `SMTP_USER` | ⬜ | SMTP username |
+| `SMTP_PASS` | ⬜ | SMTP password |
+| `SMTP_FROM` | ⬜ | Sender name and email address |
+
+> **Get your keys:**
+> - **PostgreSQL** → [neon.tech](https://neon.tech)
+> - **OpenAI** → [platform.openai.com/api-keys](https://platform.openai.com/api-keys)
+> - **Gemini** → [aistudio.google.com/apikey](https://aistudio.google.com/apikey)
 
 ### 3. Installation
 ```bash
@@ -53,7 +70,7 @@ npm install
 ```
 
 ### 4. Database Initialization
-Generate the Prisma client and push the schema to your local database:
+Generate the Prisma client and push the schema to your database:
 ```bash
 npx prisma generate
 npx prisma db push
@@ -64,11 +81,11 @@ Start the development server using `ts-node-dev`:
 ```bash
 npm run dev
 ```
-The server will be running on `http://localhost:3000` (or whatever `PORT` you specified).
+The server will be running on `http://localhost:3000` (or the `PORT` you specified).
 
 ### 6. Production Build
 ```bash
 npm run build
 npm start
 ```
-*Note: `npm start` automatically runs `npx prisma db push` prior to executing the build, making it suitable for unified deployment environments.*
+*Note: `npm start` automatically runs `npx prisma db push` before executing the build, making it suitable for unified deployment environments like Render.*

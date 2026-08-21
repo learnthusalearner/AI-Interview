@@ -4,6 +4,132 @@
 
 ---
 
+## 🚀 Full-Stack Setup Guide
+
+This project is a monorepo with two workspaces:
+
+```
+AI-Interview/
+├── backend/    # Node.js + Express + Prisma API
+└── frontend/   # Next.js 16 App Router
+```
+
+### Prerequisites
+
+| Tool | Version | Notes |
+|------|---------|-------|
+| Node.js | v18+ | [Download](https://nodejs.org) |
+| npm | v9+ | Bundled with Node.js |
+| PostgreSQL | any | [Neon (free cloud)](https://neon.tech) · [Supabase](https://supabase.com) · local |
+
+---
+
+### Step 1 — Clone the repository
+
+```bash
+git clone <your-repo-url>
+cd AI-Interview
+```
+
+---
+
+### Step 2 — Configure the Backend
+
+```bash
+cd backend
+
+# 1. Copy the example env file and fill in your values
+cp .env.example .env
+```
+
+Open `backend/.env` and set **at minimum** these two variables:
+
+```dotenv
+DATABASE_URL="postgresql://USER:PASSWORD@HOST:PORT/DATABASE?sslmode=require"
+OPENAI_API_KEY="sk-proj-..."
+```
+
+> **Get your keys:**
+> - **PostgreSQL** → [neon.tech](https://neon.tech) (free, no credit card)
+> - **OpenAI** → [platform.openai.com/api-keys](https://platform.openai.com/api-keys)
+> - **Gemini (optional)** → [aistudio.google.com/apikey](https://aistudio.google.com/apikey)
+
+```bash
+# 2. Install dependencies
+npm install
+
+# 3. Generate Prisma client and push schema to DB
+npx prisma generate
+npx prisma db push
+
+# 4. Start the dev server  →  http://localhost:3000
+npm run dev
+```
+
+---
+
+### Step 3 — Configure the Frontend
+
+Open a **new terminal**, then:
+
+```bash
+cd frontend
+
+# 1. Copy the example env file and fill in your values
+cp .env.example .env.local
+```
+
+Open `frontend/.env.local` and set these variables:
+
+```dotenv
+NEXT_PUBLIC_API_URL="http://localhost:3000/api/v1"
+NEXT_PUBLIC_SOCKET_URL="http://localhost:3000"
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY="pk_test_..."
+CLERK_SECRET_KEY="sk_test_..."
+```
+
+> **Clerk keys** → Create a free app at [clerk.com](https://clerk.com) → Dashboard → API Keys
+
+```bash
+# 2. Install dependencies
+npm install
+
+# 3. Start the dev server  →  http://localhost:3001
+npm run dev
+```
+
+---
+
+### Step 4 — Open the App
+
+| Service | URL |
+|---------|-----|
+| Frontend | http://localhost:3001 |
+| Backend API | http://localhost:3000/api/v1 |
+| Health check | http://localhost:3000/health |
+
+> **Admin panel** → Sign in and navigate to `/admin` · Password: `Admin123`
+
+---
+
+### Production Build
+
+**Backend:**
+```bash
+cd backend
+npm run build   # runs prisma generate + tsc
+npm start       # runs prisma db push + node dist/server.js
+```
+
+**Frontend:**
+```bash
+cd frontend
+npm run build
+npm start
+```
+
+---
+
 ## Application Features
 
 ### 📧 SMTP — Automated Email Notifications
@@ -13,7 +139,7 @@ Once a candidate completes their interview and a decision is made, the system au
 The backend is hosted on Render's free tier, which spins down inactive servers after a period of inactivity. To prevent this, a background polling mechanism pings the server at regular intervals, keeping it perpetually warm. This ensures candidates never experience a slow cold-start delay when beginning their interview session.
 
 ### 🤖 ML Face Detection — Anti-Cheating System
-An ML-based face detection model (powered by MediaPipe / face-api.js) runs directly in the candidate's browser during the interview. It continuously monitors the video feed to detect whether the candidate's face is present and centred in the frame. If the candidate looks away, leaves the frame, or a second face is detected, the system flags it as a potential cheating event in real time and logs it to the assessment report.
+An ML-based face detection model (powered by TensorFlow.js BlazeFace + COCO-SSD) runs on the **server** during the interview. It continuously monitors the video feed sent via WebSocket to detect whether the candidate's face is present and centred in the frame. If the candidate looks away, leaves the frame, a second face is detected, or an unauthorized device (phone, laptop) appears, the system flags it as a potential cheating event in real time and logs it to the assessment report.
 
 ### 🔐 OAuth Authentication via Clerk
 Candidate and recruiter authentication is fully managed by Clerk, which provides OAuth-based sign-in flows (Google, GitHub, etc.). Clerk handles session tokens, JWTs, and secure credential management — meaning zero sensitive auth logic lives on the custom backend. This gives users a seamless, passwordless sign-in experience while keeping the platform secure by default.

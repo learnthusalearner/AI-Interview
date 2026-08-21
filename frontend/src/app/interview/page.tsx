@@ -800,6 +800,42 @@ export default function InterviewPage() {
     }
   };
 
+  const handleGenerateQuestion = async () => {
+    setIsProcessing(true);
+    try {
+      const activeSessionId = sessionId || sessionIdRef.current;
+      if (!activeSessionId) {
+        throw new Error("No active session found. Please wait or refresh the interview.");
+      }
+      
+      addMessage({
+        id: Math.random().toString(),
+        role: "user",
+        content: "[Requested next question]",
+      });
+
+      const reply = await respondInterviewAPI(activeSessionId, "Please ask the next question or give me another scenario.");
+      
+      addMessage({
+        id: Math.random().toString(),
+        role: "assistant",
+        content: reply.reply,
+      });
+
+      if (reply.cutoff) {
+        await handleFinish();
+      }
+
+    } catch (error: any) {
+      console.error("Failed to generate question", error);
+      toast.error("Error Generating Question", {
+        description: error?.response?.data?.message || error.message || "Failed to process request."
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   const handleFinish = async () => {
     setIsEvaluating(true);
     let score = 0;
@@ -1201,6 +1237,23 @@ export default function InterviewPage() {
                 </>
               )}
             </button>
+            
+            <Button 
+              onClick={handleGenerateQuestion} 
+              disabled={isProcessing || isRecording || !sessionId}
+              title={!sessionId ? "Waiting for session to start..." : "Generate a new question"}
+              className={`absolute right-10 md:right-20 border rounded-xl px-4 py-2 flex items-center gap-2 transition-all shadow-lg ${
+                sessionId && !isProcessing && !isRecording
+                  ? "bg-zinc-800 hover:bg-zinc-700 text-zinc-200 border-white/10 cursor-pointer"
+                  : "bg-zinc-900 text-zinc-600 border-zinc-800 cursor-not-allowed"
+              }`}
+            >
+              {!sessionId ? (
+                <><Loader2 className="w-4 h-4 animate-spin" /> Session loading...</>
+              ) : (
+                <>Generate Question <ArrowRight className="w-4 h-4" /></>
+              )}
+            </Button>
           </div>
         </>
       )}
